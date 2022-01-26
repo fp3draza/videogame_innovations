@@ -1,0 +1,139 @@
+---
+title: "Result Visualisation"
+author: "Fernando Pedraza"
+date: "1/17/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(ggplot2)
+require(dplyr)
+require(cowplot)
+require(igraph)
+```
+
+
+```{r load-data, echo = FALSE}
+data <- read.csv('clean_world_record_data.csv', row.names = 1)
+```
+
+## World Record Trajectories
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+plot_1a <- ggplot(data, aes(x = normalised_run_date, y = normalised_run_time)) + geom_line(aes(group = record_compound_id), size = 0.02)  + theme_minimal() + xlab('Normalised run date') + ylab('Normalised run time') + geom_smooth(method = 'loess', formula = y ~ x)
+```
+
+
+```{r, echo = FALSE,  message=FALSE, warning=FALSE}
+plot_1b <- ggplot(data %>% filter(!normalised_run_date %in% c(0,1), delta_normalised_run_time != 0), aes(x = normalised_run_date)) + geom_histogram(color = 'black', alpha = 0.6)  + theme_minimal()  + ylab('Frequency') + xlab('Normalised run date')
+```
+
+
+```{r, echo = FALSE,  message=FALSE, warning=FALSE}
+plot_1c <- ggplot(data %>% filter(delta_normalised_run_time != 0), aes(x = delta_normalised_run_time)) + geom_histogram(color = 'black', alpha = 0.6)  + theme_minimal()  + ylab('Frequency') + xlab('Delta normalised run time')
+```
+
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+plot_1d <- ggplot(data %>% filter(delta_normalised_run_time != 0), aes(x = normalised_run_date, y = delta_normalised_run_time)) + geom_point(size = 0.02, alpha = 0.3) + geom_smooth(method = 'loess', formula = y ~ x) + theme_minimal() + xlab('Normalised run date') + ylab('Delta normalised run time') 
+```
+
+```{r,echo = FALSE ,  message=FALSE, warning=FALSE}
+plot_grid(plot_1a, plot_1b, plot_1c, plot_1d, labels = "AUTO")
+```
+
+## Player Network at Record Level
+
+```{r, echo = FALSE,  message=FALSE, warning=FALSE}
+# Define function to build network
+convert_raw_data_to_network <- function(data_to_process){
+  
+  # Extract names of player and record
+  gamer_id <- unique(data_to_process[,2])
+  record_id <- unique(data_to_process[,1])
+  
+  # create matrix of zeros
+  incidence_mat <- matrix(0, nrow = length(gamer_id), ncol = length(record_id))
+  rownames(incidence_mat) <- gamer_id
+  colnames(incidence_mat) <- record_id
+  
+  # fill incidence matrix
+  for (i in 1:nrow(data_to_process)) {
+    
+    incidence_mat[data_to_process[i,2],data_to_process[i,1]] <-  incidence_mat[data_to_process[i,2],data_to_process[i,1]] + 1
+    
+  }
+  
+  return(incidence_mat)
+  
+}
+
+# Build bipartite network from raw data
+network_record_level <- data %>% 
+  select(record_compound_id, run_player_id) %>%
+  convert_raw_data_to_network(.) %>%
+  graph_from_incidence_matrix(.)
+
+# Calculate node descriptors
+degree_values <- degree(network_record_level)
+names_gamer_and_game <- names(degree_values)
+type_node <- as.numeric(V(network_record_level)$type)
+betweenness_centrality_values <- betweenness(network_record_level)
+
+network_clean_data <- as.data.frame(cbind(names_gamer_and_game, type_node, unname(degree_values), unname(betweenness_centrality_values)))
+colnames(network_clean_data) <- c('name_id', 'node_type', 'degree', 'betweenness_centrality')
+
+player_network_clean_data <- network_clean_data %>% filter(node_type == 0)
+#player_degree_table <- table(player_network_clean_data$degree)
+#player_degree_plot <- plot(player_degree_table/sum(player_degree_table), xlab = 'Degree', ylab = 'Frequency', main = 'Player Degree Distribution')
+player_degree_plot <- ggplot(data = player_network_clean_data, aes(x =  as.numeric(degree))) + geom_histogram(color = 'black', alpha = 0.6) + theme_minimal() +
+  xlab('Degree') + ylab('Frequency') +  ggtitle('Player Degree Distribution') + theme(aspect.ratio = 1)
+
+game_network_clean_data <- network_clean_data %>% filter(node_type == 1)
+#game_degree_table <- table(game_network_clean_data$degree)
+#game_degree_plot <- plot(game_degree_table/sum(table(game_network_clean_data$degree)), xlab = 'Degree', ylab = 'Frequency', main = 'Record Degree Distribution')
+game_degree_plot <- ggplot(data = game_network_clean_data, aes(x =  as.numeric(degree))) + geom_histogram(color = 'black', alpha = 0.6) + theme_minimal() + xlab('Degree') + ylab('Frequency') + ggtitle('Player Degree Distribution')  + theme(aspect.ratio = 1)
+
+plot_grid(player_degree_plot, game_degree_plot)
+
+```
+
+
+```{r echo = FALSE, message=FALSE, warning=FALSE}
+player_network_full_data <- left_join(data, player_network_clean_data %>% rename(run_player_id = name_id))
+player_degree_influence_plot <- ggplot(data = player_network_full_data %>% filter(delta_normalised_run_time != 0), aes(x = as.numeric(degree), y = as.numeric(delta_normalised_run_time))) + geom_point(size = 0.02, alpha = 0.3)  + theme_minimal() + xlab('Degree') + ylab('Delta normalised run time') + geom_smooth(method = 'loess') + theme(aspect.ratio = 1)
+#ggplot(data = player_network_full_data, aes(x = as.numeric(betweenness_centrality), y = as.numeric(delta_normalised_run_time))) + geom_point() + theme(aspect.ratio = 1) + theme_minimal() + xlab('Degree') + ylab('Delta normalised run time') + geom_smooth(method = 'lm')
+player_degree_timing_plot <- ggplot(data = player_network_full_data %>% filter(delta_normalised_run_time != 0), aes(x = as.numeric(degree), y = as.numeric(normalised_run_date))) + geom_point(size = 0.02, alpha = 0.3) + theme_minimal() + xlab('Degree') + ylab('Normalised run date') + geom_smooth(method = 'loess') + theme(aspect.ratio = 1)
+
+plot_grid(player_degree_influence_plot, player_degree_timing_plot)
+```
+
+```{r, echo = FALSE}
+
+# # Build bipartite network from raw data
+# network_record_level <- data %>% 
+#   select(game_id_string, run_player_id) %>%
+#   convert_raw_data_to_network(.) %>%
+#   graph_from_incidence_matrix(.)
+# 
+# # Calculate node descriptors
+# degree_values <- degree(network_record_level)
+# names_gamer_and_game <- names(degree_values)
+# type_node <- as.numeric(V(network_record_level)$type)
+# betweenness_centrality_values <- betweenness(network_record_level)
+# 
+# network_clean_data <- as.data.frame(cbind(names_gamer_and_game, type_node, unname(degree_values), unname(betweenness_centrality_values)))
+# colnames(network_clean_data) <- c('name_id', 'node_type', 'degree', 'betweenness_centrality')
+# 
+# player_network_clean_data <- network_clean_data %>% filter(node_type == 0)
+# player_degree_table <- table(player_network_clean_data$degree)
+# player_degree_plot <- plot(player_degree_table/sum(player_degree_table))
+# 
+# game_network_clean_data <- network_clean_data %>% filter(node_type == 1)
+# game_degree_table <- table(game_network_clean_data$degree)
+# game_degree_plot <- plot(game_degree_table/sum(table(game_network_clean_data$degree)))
+# 
+# plot_grid(player_degree_plot, game_degree_plot, labels = 'AUTO')
+```
+
