@@ -73,7 +73,7 @@ convert_raw_data_to_network <- function(data_to_process){
 network_record_level <- data %>% 
   select(record_compound_id, run_player_id) %>%
   convert_raw_data_to_network(.) %>%
-  graph_from_incidence_matrix(.)
+  graph_from_incidence_matrix(., weighted = TRUE)
 
 # Calculate node descriptors
 degree_values <- degree(network_record_level)
@@ -93,7 +93,7 @@ player_degree_plot <- ggplot(data = player_network_clean_data, aes(x =  as.numer
 game_network_clean_data <- network_clean_data %>% filter(node_type == 1)
 #game_degree_table <- table(game_network_clean_data$degree)
 #game_degree_plot <- plot(game_degree_table/sum(table(game_network_clean_data$degree)), xlab = 'Degree', ylab = 'Frequency', main = 'Record Degree Distribution')
-game_degree_plot <- ggplot(data = game_network_clean_data, aes(x =  as.numeric(degree))) + geom_histogram(color = 'black', alpha = 0.6) + theme_minimal() + xlab('Degree') + ylab('Frequency') + ggtitle('Player Degree Distribution')  + theme(aspect.ratio = 1)
+game_degree_plot <- ggplot(data = game_network_clean_data, aes(x =  as.numeric(degree))) + geom_histogram(color = 'black', alpha = 0.6) + theme_minimal() + xlab('Degree') + ylab('Frequency') + ggtitle('Game Degree Distribution')  + theme(aspect.ratio = 1)
 
 plot_grid(player_degree_plot, game_degree_plot)
 
@@ -135,5 +135,9 @@ plot_grid(player_degree_influence_plot, player_degree_timing_plot)
 # game_degree_plot <- plot(game_degree_table/sum(table(game_network_clean_data$degree)))
 # 
 # plot_grid(player_degree_plot, game_degree_plot, labels = 'AUTO')
+```
+
+```{r}
+
 ```
 
