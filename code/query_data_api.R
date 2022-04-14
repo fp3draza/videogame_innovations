@@ -235,6 +235,12 @@ fetch_run_information_from_api_per_level <- function(game_id_string, category_id
   # try to fetch data from api
   leaderboard_data <- try(jsonlite::fromJSON(list_of_runs_query_string), silent = TRUE)
   
+  # init variables 
+  run_time <- NA
+  run_date <- NA
+  run_date_submitted <- NA
+  run_player_id <- NA
+  
   # if the request gives an erorr, return empty data
   if (class(leaderboard_data) == 'try-error' ) {
     run_time <- NA
@@ -255,7 +261,7 @@ fetch_run_information_from_api_per_level <- function(game_id_string, category_id
       run_player_id <- NA
     }
   
-    if (!is.null(nrow(leaderboard_data))) {
+    if (!is.null(nrow(leaderboard_data)) && !any(sapply(leaderboard_data$run$players, function(x) nrow(x)) == 0)) {
       # select relevant columns 
       run_time <- as.numeric(leaderboard_data$run$times$realtime_t)
       run_date <- leaderboard_data$run$date
@@ -294,11 +300,11 @@ build_leaderboard_dataframe_for_game <- function(game_id_string){
     
     # loop through category ids for each level
     for (i in 1:nrow(category_level_combo)) {
-        
         # extract the current combination of category and level
         current_category <- as.character(category_level_combo[i,1])
         current_level <- as.character(category_level_combo[i,2])
-        
+        print(current_category)
+        print(current_level)
         # fetch leaderboard 
         current_leaderboard <- fetch_run_information_from_api_per_level(game_id_string, category_id_string = current_category, level_id_string = current_level)
         
