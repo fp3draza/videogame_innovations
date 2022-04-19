@@ -24,9 +24,9 @@ nudge_records_from_same_date <- function(dataframe_to_use){
 }
 
 # define function to make sure that data is ordered by run time, if not discard
-check_data_for_correct_order_in_run_time <- function(dataframe_to_use){
+check_data_for_correct_order <- function(dataframe_to_use){
   
-  if (is.unsorted(dataframe_to_use$run_time)) {
+  if (is.unsorted(dataframe_to_use$run_time) || is.unsorted(dataframe_to_use$run_date[1] - dataframe_to_use$run_date)) {
     
     dataframe_to_use$run_time <- NA
     
