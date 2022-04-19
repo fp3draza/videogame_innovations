@@ -13,7 +13,7 @@ fetch_game_information_from_api <- function(){
   iteration_step  <- 200
   
   # define initial iteration
-  iteration <- 0
+  iteration <- 13500
   counter <- 0
   
   # initialize empty list
