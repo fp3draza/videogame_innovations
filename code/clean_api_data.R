@@ -1,16 +1,13 @@
 # process api data
-
-rm(list=ls())
-
-load('api_data_2022-04-13.rdata')
-
-df <- do.call("rbind", leaderboard_list)
-
-
+# requires
 require(ggplot2)
 require(stringr)
 require(lubridate)
 require(dplyr)
+source('code/process_data_queried_from_api.R')
+
+# load data
+df <- read.csv('speedrun_data.csv', row.names = 1)
 
 # make unique id for each record
 df <- df %>% mutate(id = paste0(game_id_string, category_id_string, level_id_string))
@@ -18,6 +15,8 @@ df <- df %>% mutate(id = paste0(game_id_string, category_id_string, level_id_str
 # keep only records that have at least five observations
 df <- df %>% group_by(id) %>% filter(n() > 5)
 
+# transform run date to Data format
+df <- df %>% mutate(run_date = as.Date(run_date))
 
 # check to see if data is in correct order
 # if data is incorrect, set to na
@@ -38,14 +37,15 @@ df <- df %>% group_by(id) %>%
 
 # convert run time so that first time is set to 1 
 # and rest are difference from first time
-df_test <- df %>% group_by(id) %>%
+df <- df %>% group_by(id) %>%
   mutate(run_time_standard = as.vector(run_time - max(run_time)))
 
+df <- df %>% group_by(id) %>% 
+  mutate(run_time_percentage = as.vector((run_time * 100)/max(run_time)))
 
-aaa <- df %>% filter(id == unique(df$id)[1]) %>%
-  select(run_date_submitted)
+df <- df %>% group_by(id) %>% 
+  mutate(normalised_run_date = (as.numeric(run_date - min(run_date))) / as.numeric(max(run_date) - min((run_date))),
+         normalised_run_time = (run_time - min(run_time)) / (max(run_time) - min(run_time)))
 
-aaa$run_date_submitted
-
-ggplot(data = df_test %>% filter(id == unique(df$id)[123]), aes(x = run_date_in_seconds, y = run_time_standard)) + geom_point() 
- 
+# write file out
+write.csv(df, 'speedrun_data_clean.csv')
