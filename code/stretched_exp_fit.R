@@ -38,13 +38,18 @@ match("9d3rvzwdmke9evjdgame-level",rows_per_id$id) # has only run_date_in_second
 match("9d3rvzwd7kj3q1x2game-level",rows_per_id$id)
 
 
-filter(df1, id %in% rows_per_id[48:53,]$id)
+# filter(df1, id %in% rows_per_id[48:53,]$id)
+# match("9d3rvzwd7kj3q1x2game-level",ids)
+
 
 # remove problematic data sets
-ids <- filter(rows_per_id, !(id %in% c("9d3rvzwdmke9evjdgame-level","9d3rvzwd7kj3q1x2game-level")))$id
-
-match("9d3rvzwd7kj3q1x2game-level",ids)
-
+bad_ids <- c("9d3rvzwdmke9evjdgame-level",
+             "9do8jge1jdzlomr2game-level",
+             "lde3r2l6ndx41ev2game-level",
+             "pd0qq4v1824le9gdgame-level",
+             "yd478gde5dw43j0k29vgzgl9",
+             "yd478gde5dw43j0k592m4m3w")
+ids <- filter(rows_per_id, !(id %in% bad_ids))$id
 
 df_fit <- NULL
 
@@ -56,9 +61,9 @@ for (my_id in ids) {
   d$predicted <- predict(fit)   # Save the predicted values
   d$residuals <- residuals(fit) # Save the residual values
 
-  
-  print(summary(fit)$coeff[2,"Estimate"])
-  
+  print("")
+  print(paste("now id = ", my_id))
+
   
   beta0 <- summary(fit)$coeff[1,"Estimate"]
   beta1 <- summary(fit)$coeff[2,"Estimate"]
@@ -83,6 +88,8 @@ for (my_id in ids) {
 
 colnames(df_fit) <- c("id", "beta0", "beta1", "R_sq", "R_sq_adj", "p_val")
 
+dim(df_fit)
+df_fit %>% formattable()
 
 # visualize the fit
 ggplot(d, aes(x = log_time, y = log_log_improvement)) +
@@ -96,12 +103,26 @@ ggplot(d, aes(x = log_time, y = log_log_improvement)) +
   geom_point(aes(y = predicted), shape = 1) +
   theme_bw()
 
-my_id <- "9do8jge1jdzlomr2game-level"
+my_id <- "j1l7kedg9kvx31o2game-level"
+filter(df1, id==my_id)
 
-ggplot(filter(df1, id==my_id),aes(x = log_time, y = log_log_improvement)) + 
-  #geom_line(aes(group = id), size = 0.07,color="blue") + 
+negative_R_sq_ids <- filter(df_fit, R_sq_adj < 0)$id
+
+bad_fit_ids <- (filter(df_fit, R_sq_adj > 0) %>%  filter(., R_sq_adj < 0.5))$id
+
+good_ids <- (filter(df_fit, !(id %in% negative_R_sq_ids)) %>% 
+               filter(., !(id %in% bad_fit_ids)))$id
+
+good_ids <- (filter(df_fit, R_sq_adj > 0.94))$id
+
+# precetage of dataexplained better than a constant https://people.duke.edu/~rnau/rsquared.htm
+
+selected_ids <- sample(good_ids, replace= TRUE, 10)
+
+ggplot(filter(df1, id %in% good_ids),aes(x = log_time, y = log_log_improvement)) + 
+  geom_line(aes(group = id), size = 0.07,color="blue") + 
   geom_point(size = 0.5, color="blue") + 
-  stat_function(fun = function(x) straight_line(x, beta0, beta1), color ="black", linetype = "dotted") +
+#  stat_function(fun = function(x) straight_line(x, beta0, beta1), color ="black", linetype = "dotted") +
   theme_minimal() + xlab('days since first record') + ylab('log-log percentage of time first record') + 
   theme(aspect.ratio = 1) 
 
