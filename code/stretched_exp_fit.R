@@ -12,7 +12,7 @@ source("helper.R")
 dim(data)
 
 # choose time series with more than 10 points  
-rows_per_id <- data %>% count(id) %>% filter(n >10) 
+rows_per_id <- data %>% count(id) %>% filter(n >8) 
 dim(rows_per_id)
 rows_per_id %>% formattable()
 
@@ -23,8 +23,6 @@ distinct(my_data, id)
 
 # Data linearization 
 
-#my_id <- "3dxkz0v19kv83mjdgame-level" # "yo1yv1q54xk906k0game-level" #   
-
 df2 <- my_data %>% select(id, run_date_in_seconds, run_time_percentage) 
 df1 <- df2 %>% mutate(log_improvement=log(run_time_percentage/100)) %>%
   filter(log_improvement<0) %>% 
@@ -34,8 +32,8 @@ df1 <- df2 %>% mutate(log_improvement=log(run_time_percentage/100)) %>%
 #ids <- sample(df1$id, replace= TRUE, 15)
 
 
-match("9d3rvzwdmke9evjdgame-level",rows_per_id$id) # has only run_date_in_seconds = 1 
-match("9d3rvzwd7kj3q1x2game-level",rows_per_id$id)
+# match("9d3rvzwdmke9evjdgame-level",rows_per_id$id) # has only run_date_in_seconds = 1 
+# match("9d3rvzwd7kj3q1x2game-level",rows_per_id$id)
 
 
 # filter(df1, id %in% rows_per_id[48:53,]$id)
@@ -48,7 +46,8 @@ bad_ids <- c("9d3rvzwdmke9evjdgame-level",
              "lde3r2l6ndx41ev2game-level",
              "pd0qq4v1824le9gdgame-level",
              "yd478gde5dw43j0k29vgzgl9",
-             "yd478gde5dw43j0k592m4m3w")
+             "yd478gde5dw43j0k592m4m3w",
+             "pd0wpq21ndx79m12xd01rljw")
 ids <- filter(rows_per_id, !(id %in% bad_ids))$id
 
 df_fit <- NULL
@@ -67,6 +66,7 @@ for (my_id in ids) {
   
   beta0 <- summary(fit)$coeff[1,"Estimate"]
   beta1 <- summary(fit)$coeff[2,"Estimate"]
+  tau0 <- exp(-beta0/beta1)
   p_val <- summary(fit)$coeff[2,4]
   R_sq <- summary(fit)$r.squared
   R_sq_adj <- summary(fit)$adj.r.squared
@@ -78,7 +78,7 @@ for (my_id in ids) {
     break
   } 
   
-  row <- data.frame(my_id, beta0, beta1, R_sq, R_sq_adj, p_val)
+  row <- data.frame(my_id, beta0, beta1, tau0, R_sq, R_sq_adj, p_val)
   
   print(row)
     
@@ -86,12 +86,33 @@ for (my_id in ids) {
     
 }
 
-colnames(df_fit) <- c("id", "beta0", "beta1", "R_sq", "R_sq_adj", "p_val")
+colnames(df_fit) <- c("id", "beta0", "beta1", "tau0","R_sq", "R_sq_adj", "p_val")
 
 dim(df_fit)
 df_fit %>% formattable()
 
-# visualize the fit
+# VISUALIZE the fit for a selected id== my_id on the original dataset
+
+#my_id <-"y65r341e824xo0edkwj75xzw" # "kdkxgg6m9kvmwxokgame-level" # "k6qgnmdg02ql5m9kgdre30e9"
+
+my_id <- "29d30dlprkle7mw2game-level" 
+
+filter(df_fit, id==my_id)$beta0
+lambda <- exp(filter(df_fit, id==my_id)$beta0)
+beta1 <- filter(df_fit, id==my_id)$beta1
+
+ggplot(filter(my_data,id == my_id), aes(x = run_date_in_seconds, y = run_time_percentage/100)) + geom_line(aes(group = id), size = 0.07,color="blue") + 
+  geom_point(size = 0.5, color="blue") + 
+  stat_function(fun = function(x) stretched_exp(x,lambda,beta1), color ="black", linetype = "dotted") +
+  theme_minimal() + xlab('days since first record') + ylab('percentage of time first record') + 
+  theme(aspect.ratio = 1) #+   xlim(c(1000,1100)) 
+
+# visualized linearized fit 
+d <-df1 %>% filter(id == my_id) %>% select(id, log_time, log_log_improvement)
+fit <- lm(log_log_improvement ~ log_time, data = d) # fit the model
+d$predicted <- predict(fit)   # Save the predicted values
+d$residuals <- residuals(fit) # Save the residual values
+
 ggplot(d, aes(x = log_time, y = log_log_improvement)) +
   geom_smooth(method = "lm",
               se = FALSE,
@@ -101,34 +122,56 @@ ggplot(d, aes(x = log_time, y = log_log_improvement)) +
   scale_color_continuous(low = "green", high = "red") +             # color of the points mapped to residual size - green smaller, red larger
   guides(scale = "none") +                             # Size legend removed
   geom_point(aes(y = predicted), shape = 1) +
-  theme_bw()
+  theme_bw() 
 
-my_id <- "j1l7kedg9kvx31o2game-level"
-filter(df1, id==my_id)
 
-negative_R_sq_ids <- filter(df_fit, R_sq_adj < 0)$id
+##########################################################
 
-bad_fit_ids <- (filter(df_fit, R_sq_adj > 0) %>%  filter(., R_sq_adj < 0.5))$id
 
-good_ids <- (filter(df_fit, !(id %in% negative_R_sq_ids)) %>% 
-               filter(., !(id %in% bad_fit_ids)))$id
-
-good_ids <- (filter(df_fit, R_sq_adj > 0.94))$id
-
+# Analysis based on the adjusted R-square value  
 # precetage of dataexplained better than a constant https://people.duke.edu/~rnau/rsquared.htm
 
-selected_ids <- sample(good_ids, replace= TRUE, 10)
+negative_R_sq_ids <- filter(df_fit, R_sq_adj < 0)$id
+bad_fit_ids <- (filter(df_fit, R_sq_adj > 0) %>%  filter(., R_sq_adj < 0.5))$id
 
-ggplot(filter(df1, id %in% good_ids),aes(x = log_time, y = log_log_improvement)) + 
+# good_ids <- (filter(df_fit, R_sq_adj > 0.93) %>% filter(beta1>1))$id
+# good_ids <- (filter(df_fit, R_sq_adj > 0.9))$id
+# length(good_ids)
+
+average_ids <- (filter(df_fit, (R_sq_adj > 0.6) & (tau0 >1)))$id
+length(average_ids)
+filter(df_fit, id %in% average_ids) %>% formattable()
+
+# Display some sample linearized curves from R-seleced ids
+selected_ids <- sample(average_ids, replace= TRUE, 10)
+
+ ggplot(filter(df1, id %in% selected_ids),aes(x = log_time, y = log_log_improvement)) + 
   geom_line(aes(group = id), size = 0.07,color="blue") + 
   geom_point(size = 0.5, color="blue") + 
 #  stat_function(fun = function(x) straight_line(x, beta0, beta1), color ="black", linetype = "dotted") +
   theme_minimal() + xlab('days since first record') + ylab('log-log percentage of time first record') + 
   theme(aspect.ratio = 1) 
 
+# DISPLAY HISTOGRAMS for fitted parameters 
+# beta1 
+ggplot(filter(df_fit, id %in% average_ids), aes(x=beta1)) +
+  geom_histogram() + geom_density(color="red") + 
+  xlim(0,3.9)
+
+filter(df_fit, (beta1>2) & (beta1<3) & (id %in% average_ids)) # not even one between 3 and 4
+filter(df_fit, (beta1>4) & (id %in% average_ids)) # => sudden drop sigmoid like 
+
+# tau0
+ggplot(filter(df_fit, id %in% average_ids), aes(x=tau0)) +
+  geom_histogram() + geom_density(color="blue") +
+  scale_x_log10(breaks=c(1,1.e2,1.e3,1.e4,1.e5,1.e6,1.e7))
+
+filter(df_fit, (tau0<2) & (id %in% average_ids)) 
 
 
+# create categorical variables 
 
+beta_classifier(1)
 
-
+filter(df_fit, id %in% average_ids) %>% mutate(beta1_cat = beta_classifier(beta1))
 

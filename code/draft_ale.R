@@ -55,8 +55,6 @@ ggplot(filter(mydata,id == "yo1yv1q54xk906k0game-level"), aes(x = run_date_in_se
   theme(aspect.ratio = 1) 
 
 
-
-
 # Data linearization 
 
 my_id <- "3dxkz0v19kv83mjdgame-level" # "yo1yv1q54xk906k0game-level" #   
