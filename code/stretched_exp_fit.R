@@ -8,6 +8,8 @@ setwd('~/videogame_innovations/code')
 data <- read.csv('../speedrun_data_clean.csv', row.names = 1)
 source("helper.R")
 
+tau_max <- max(data$run_date_in_seconds)
+
 # complete dataset
 dim(data)
 
@@ -95,7 +97,7 @@ df_fit %>% formattable()
 
 #my_id <-"y65r341e824xo0edkwj75xzw" # "kdkxgg6m9kvmwxokgame-level" # "k6qgnmdg02ql5m9kgdre30e9"
 
-my_id <- "29d30dlprkle7mw2game-level" 
+my_id <- "w6jlw74dwdmxoqek5wknzovw" 
 
 filter(df_fit, id==my_id)$beta0
 lambda <- exp(filter(df_fit, id==my_id)$beta0)
@@ -138,7 +140,7 @@ bad_fit_ids <- (filter(df_fit, R_sq_adj > 0) %>%  filter(., R_sq_adj < 0.5))$id
 # good_ids <- (filter(df_fit, R_sq_adj > 0.9))$id
 # length(good_ids)
 
-average_ids <- (filter(df_fit, (R_sq_adj > 0.6) & (tau0 >1)))$id
+average_ids <- (filter(df_fit, (R_sq_adj > 0.6) & (tau0 >1) & (tau0<tau_max) ))$id
 length(average_ids)
 filter(df_fit, id %in% average_ids) %>% formattable()
 
@@ -156,22 +158,30 @@ selected_ids <- sample(average_ids, replace= TRUE, 10)
 # beta1 
 ggplot(filter(df_fit, id %in% average_ids), aes(x=beta1)) +
   geom_histogram() + geom_density(color="red") + 
-  xlim(0,3.9)
+  xlim(0,3.2)
 
 filter(df_fit, (beta1>2) & (beta1<3) & (id %in% average_ids)) # not even one between 3 and 4
 filter(df_fit, (beta1>4) & (id %in% average_ids)) # => sudden drop sigmoid like 
 
 # tau0
 ggplot(filter(df_fit, id %in% average_ids), aes(x=tau0)) +
-  geom_histogram() + geom_density(color="blue") +
-  scale_x_log10(breaks=c(1,1.e2,1.e3,1.e4,1.e5,1.e6,1.e7))
+  geom_histogram(binwidth=1000, boundary = 0, color="blue") 
 
-filter(df_fit, (tau0<2) & (id %in% average_ids)) 
+filter(df_fit, (tau0>4000) & (tau0>4000) & (id %in% average_ids)) 
 
+dim(filter(df_fit, (tau0<=1000) & (id %in% average_ids))) # 138/221
 
 # create categorical variables 
+df_res <- filter(df_fit, id %in% average_ids) %>% mutate(beta1_cat = beta_classifier_V(beta1),
+                                               tau0_cat = tau_classifier_V(tau0))
 
-beta_classifier(1)
+df_res %>% formattable() 
 
-filter(df_fit, id %in% average_ids) %>% mutate(beta1_cat = beta_classifier(beta1))
+dim(df_res). # 221 => 166 (train) + 25 (test) 
 
+# OSS 
+# we could consider creating less categories for tau maybe just smaller/larger than 1000 days (138/221)
+# to be fully consistent we should also check for tmax > tau0 for a given fitting 
+# but we would probably through away many other points    
+# we could join my_data and df_fit onn id and plot some reduced plot vs time/tau0
+# at least those associated with a large R-squared 
