@@ -1,0 +1,39 @@
+---
+title: "Result Visualisation"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(ggplot2)
+require(dplyr)
+require(cowplot)
+require(igraph)
+```
+
+
+```{r load-data, echo = FALSE}
+data <- read.csv('../speedrun_data_clean.csv', row.names = 1)
+```
+
+## World Record Trajectories
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+ggplot(data, aes(x = normalised_run_date, y = normalised_run_time)) + geom_line(aes(group = id), size = 0.02)  + theme_minimal() + xlab('Normalised run date') + ylab('Normalised run time') + theme(aspect.ratio = 1)
+```
+
+
+```{r, echo = FALSE,  message=FALSE, warning=FALSE}
+ggplot(data, aes(x = run_date_in_seconds, y = run_time_percentage)) + geom_line(aes(group = id), size = 0.02)  + theme_minimal() + xlab('Seconds since first record') + ylab('Percentage of time first record') + theme(aspect.ratio = 1)
+```
+
+
+```{r, echo = FALSE,  message=FALSE, warning=FALSE}
+ggplot(data, aes(x = run_date_in_seconds, y = run_time_standard)) + geom_line(aes(group = id), size = 0.02)  + theme_minimal() + xlab('Seconds since first record') + ylab('Time reduced from first record') + theme(aspect.ratio = 1)
+```
+
+
+```{r, echo = FALSE,  message=FALSE, warning=FALSE}
+ggplot(data, aes(x = run_date_in_seconds, y = run_time)) + geom_line(aes(group = id), size = 0.02)  + theme_minimal() + xlab('Seconds since first record') + ylab('Raw run time') + theme(aspect.ratio = 1)
+```
+drm(Y ~ X, fct = DRC.logCurve() )
