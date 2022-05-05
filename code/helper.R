@@ -21,11 +21,10 @@ beta_classifier <- function(beta){
 beta_classifier_V <- Vectorize(beta_classifier)
 
 tau_classifier <- function(tau){
-  range <- "E" # > 4000
+  range <- "E" # > 3000
   if(tau<=1000) range <- "A"  
   if(tau>1000 & tau<=2000) range <- "B"
   if(tau>2000 & tau<=3000) range <- "C"
-  if(tau>3000 & tau<=4000) range <- "D"
   return(range)
 }
 

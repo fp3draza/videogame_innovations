@@ -10,6 +10,8 @@ source("helper.R")
 
 tau_max <- max(data$run_date_in_seconds)
 
+df_time_max <- data %>% group_by(id) %>% summarize(time_max =max(run_date_in_seconds))
+
 # complete dataset
 dim(data)
 
@@ -97,7 +99,7 @@ df_fit %>% formattable()
 
 #my_id <-"y65r341e824xo0edkwj75xzw" # "kdkxgg6m9kvmwxokgame-level" # "k6qgnmdg02ql5m9kgdre30e9"
 
-my_id <- "w6jlw74dwdmxoqek5wknzovw" 
+my_id <- "j1ngme6pwk6w70o2game-level" 
 
 filter(df_fit, id==my_id)$beta0
 lambda <- exp(filter(df_fit, id==my_id)$beta0)
@@ -167,9 +169,10 @@ filter(df_fit, (beta1>4) & (id %in% average_ids)) # => sudden drop sigmoid like
 ggplot(filter(df_fit, id %in% average_ids), aes(x=tau0)) +
   geom_histogram(binwidth=1000, boundary = 0, color="blue") 
 
-filter(df_fit, (tau0>4000) & (tau0>4000) & (id %in% average_ids)) 
+filter(df_fit, (tau0>1000) & (tau0<2000) & (id %in% average_ids)) 
 
 dim(filter(df_fit, (tau0<=1000) & (id %in% average_ids))) # 138/221
+
 
 # create categorical variables 
 df_res <- filter(df_fit, id %in% average_ids) %>% mutate(beta1_cat = beta_classifier_V(beta1),
@@ -177,7 +180,7 @@ df_res <- filter(df_fit, id %in% average_ids) %>% mutate(beta1_cat = beta_classi
 
 df_res %>% formattable() 
 
-dim(df_res). # 221 => 166 (train) + 25 (test) 
+dim(df_res). # 221 => 166 (train) + 55 (test) 
 
 # OSS 
 # we could consider creating less categories for tau maybe just smaller/larger than 1000 days (138/221)
