@@ -2,8 +2,9 @@ power_law <- function(x,lambda,beta){
   return(lambda*(x**beta))
 }
 
-stretched_exp <- function(x,lambda,beta){
-  return(exp(-power_law(x,lambda,beta)))
+stretched_exp <- function(x,lambda,beta,I_inf){
+  fun <- I_inf + (1.-I_inf)*exp(-power_law(x,lambda,beta))
+  return(fun)
 }
 
 straight_line <- function(x,p,m){
@@ -30,3 +31,18 @@ tau_classifier <- function(tau){
 
 # vectorize function
 tau_classifier_V <- Vectorize(tau_classifier)
+
+
+my_R_Sq <- function(measure, prediction, k){
+  # k: number of predictors (fitted parameters) 
+  
+  tss <- sum((measure -mean(measure))^2)
+  rss <- sum((measure - prediction)^2)
+  n <-length(measure)
+  R_sq <- 1- (rss/tss)    
+  R_sq_adj <- rss*(n-1)/(tss*(n-k-1)) 
+  R_sq_adj <- 1-R_sq_adj 
+  
+  return(R_sq_adj)  
+}
+

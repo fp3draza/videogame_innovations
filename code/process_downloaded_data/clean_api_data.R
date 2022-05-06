@@ -4,10 +4,13 @@ require(ggplot2)
 require(stringr)
 require(lubridate)
 require(dplyr)
-source('code/process_data_queried_from_api.R')
+
+setwd("~/videogame_innovations")
+
+source('./code/process_downloaded_data/process_data_queried_from_api.R')
 
 # load data
-df <- read.csv('speedrun_data.csv', row.names = 1)
+df <- read.csv('../videogame_downloads/speedrun_data.csv', row.names = 1)
 
 # make unique id for each record
 df <- df %>% mutate(id = paste0(game_id_string, category_id_string, level_id_string))
@@ -48,4 +51,5 @@ df <- df %>% group_by(id) %>%
          normalised_run_time = (run_time - min(run_time)) / (max(run_time) - min(run_time)))
 
 # write file out
-write.csv(df, 'speedrun_data_clean.csv')
+write.csv(df, './clean_data/speedrun_data_clean.csv')
+

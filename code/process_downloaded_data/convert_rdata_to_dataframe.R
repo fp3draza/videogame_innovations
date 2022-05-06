@@ -2,8 +2,8 @@
 convert_rdata_to_dataframe <- function(){
   
   # file names 
-  rdata_load_filename <-'./data/api_data_2022-04-14.RData'
-  write_output_filename <-'./data/api_data_2022-04-14.csv'
+  rdata_load_filename <-'../videogame_downloads/data/api_data_2022-04-14.RData'
+  write_output_filename <-'../videogame_downloads/data/api_data_2022-04-14.csv'
   
   # load Rdata
   load(rdata_load_filename)

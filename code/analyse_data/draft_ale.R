@@ -6,7 +6,7 @@ require(igraph)
 
 setwd('~/videogame_innovations/code')
 data <- read.csv('../speedrun_data_clean.csv', row.names = 1)
-source("helper.R")
+source("./code/analyse_data/helper.R")
 
 ids <- filter(data, run_date_in_seconds > 1000)  %>% distinct(id)  #%>% filter(., run_time_percentage < 90)
 ids1 <- filter(data, run_date_in_seconds > 3600) %>% filter(., run_time_percentage < 25) %>% distinct(id) 
@@ -115,7 +115,112 @@ ggplot(d,aes(x = log_time, y = log_log_improvement)) +
 
 
 
+# NON LINEAR FIT 
+
+my_id <- "268erm76vdoxgl9dgame-level" 
+
+filter(df_fit, id==my_id)$beta0
 
 
+lambda <- summary(fitStrExp)$coeff[1,"Estimate"] # exp(filter(df_fit, id==my_id)$beta0)
+beta1 <- 1. #summary(fitStrExp)$coeff[2,"Estimate"] #filter(df_fit, id==my_id)$beta1
+I_inf <- summary(fitStrExp)$coeff[3,"Estimate"]
+
+ggplot(filter(my_data,id == my_id), aes(x = run_date_in_days, y = run_time_percentage/100)) + geom_line(aes(group = id), size = 0.07,color="blue") + 
+  geom_point(size = 0.5, color="blue") + 
+  stat_function(fun = function(x) stretched_exp(x,lambda,beta1,I_inf), color ="red", linetype = "dotted") +
+  theme_minimal() + xlab('days since first record') + ylab('percentage of time first record') + 
+  theme(aspect.ratio = 1) #+   xlim(c(1000,1100)) 
+
+
+
+## without conditional linearity
+
+d <-my_data %>% filter(id == my_id) %>% 
+  mutate(run_time_improvement = run_time_percentage/100) %>%
+  select(run_date_in_days, run_time_improvement)
+
+dim(d)
+
+I_inf<- min(d$run_time_improvement)
+lambda <- log(1-I_guess)/(min(d$run_date_in_days)-max(d$run_date_in_days))
+beta <- 1.
+
+df_conv <- NULL
+
+for (iter in seq(1,6)){
+  
+  print(iter)
+  
+  # redefine initial guess
+  lambda_guess <- lambda
+  beta_guess <- beta  
+  I_guess <- I_inf
+  
+  if(iter%%2 == 0) {
+    print(iter)
+
+    fitStrExp <- nlsLM(run_time_improvement ~ stretched_exp(run_date_in_days, lambda_guess, beta, I_guess),
+                       start = list(beta = beta_guess),
+                       lower = c(0),
+                       data = d)      
+    # get fitted predictors  
+    
+    print(coef(fitStrExp))
+    
+    beta <- coef(fitStrExp)["beta"]
+      
+  }
+  else 
+  {
+    fitStrExp <- nlsLM(run_time_improvement ~ stretched_exp(run_date_in_days, lambda, beta_guess, I_inf),
+                       start = list(lambda = lambda_guess, 
+                                    I_inf = I_guess),
+                       lower = c(0,0),
+                       data = d)      
+    # get fitted predictors  
+    print(coef(fitStrExp))
+    lambda <- coef(fitStrExp)["lambda"]
+    I_inf <- coef(fitStrExp)["I_inf"]
+    if(is.na(I_inf)){
+      print("achtung I_inf NA")
+      I_inf=0
+    }
+  }
+  
+  measure <- d$run_time_improvement 
+  prediction <- fitted(fitStrExp)
+  k <-length(coef(fitStrExp)) 
+  R_sq <- my_R_Sq(measure, prediction, k)
+  
+  print("")
+  # print(iter)
+  # print(c(lambda, beta, I_inf, R_sq))
+  #df_conv <- rbind(df_conv, row)
+
+}
+
+
+
+
+colnames(df_conv) <- c("iter", "lambda", "beta", "I_inf", "R_sq")
+
+
+summary(fitStrExp)
+measure <- d$run_time_improvement 
+prediction <- fitted(fitStrExp)
+k <-length(coef(fitStrExp)) 
+my_R_Sq(measure, prediction, k)
+
+
+
+# coef(fitStrExp)
+# confint(fitStrExp)
+# deviance(fitStrExp)
+# df.residual(fitStrExp)
+# fitted(fitStrExp)
+# formula(fitStrExp)
+# logLik(fitStrExp)
+# predict(fitStrExp)
 
 
