@@ -11,7 +11,7 @@ stretched_exp_fit <- function(df, lambda = 0.1,
   for (iter in seq(1,iter_max)){
     
     convergence <- FALSE
-    print(iter)
+    # print(iter)
     
     # redefine initial guess
     lambda_guess <- lambda
@@ -50,11 +50,6 @@ stretched_exp_fit <- function(df, lambda = 0.1,
     R_sq <- my_R_Sq(measure, prediction, k)
     delta_R_sq <- R_sq-R_sq_old
     
-    
-    # row <- data.frame(iter,lambda, lambda_err, beta, beta_err, I_inf, I_inf_err, R_sq, delta_R_sq)
-    # df_res <- rbind(df_res, row)
-    
-    #print(paste0("conv " ,c(R_sq,delta_R_sq,iter_max)))
     # check convergence 
     if (abs(delta_R_sq) < epsilon_R_sq || iter == iter_max){ 
       
@@ -82,8 +77,6 @@ stretched_exp_fit <- function(df, lambda = 0.1,
                           "beta", "beta_err", "I_inf", "I_inf_err",
                           "tau0","tau0_err","R_sq", "delta_R_sq",
                           "R_sq_adj", "convergence")
-  
-  # colnames(df_res) <- c("iter","lambda", "lambda_err", "beta", "beta_err", "I_inf", "I_inf_err", "R_sq", "delta_R_sq")
   
   rownames(df_res) <- NULL
   return(df_res)

@@ -7,33 +7,32 @@ require(igraph)
 setwd('~/videogame_innovations')
 data <- read.csv('./clean_data/speedrun_data_clean.csv', row.names = 1)
 source("./code/analyse_data/helper.R")
+source("./code/analyse_data/functions_fit.R")
+
+write_output_filename <-'./code/fit_data_2022-05-08.csv'
 
 colnames(data)
 
 # complete dataset
 dim(data)
 
+# remove improvements occurred on day 1
+data_days <- data %>% filter(!((run_date_in_days == 1) & (run_time_percentage != 100)))
+dim(data_days)
+
 # extract the maximum time per game id 
-df_run_date_max <- data %>% group_by(id) %>% summarize(run_date_in_days_max = max(run_date_in_days))
+df_run_date_max <- data_days %>% group_by(id) %>% summarize(run_date_in_days_max = max(run_date_in_days))
 
 # choose time series containing more than 9 points  
-
-rows_per_id <- data %>% count(id) %>% filter(n >8) 
+rows_per_id <- data_days %>% count(id) %>% filter(n >8) 
 dim(rows_per_id)
 rows_per_id %>% formattable()
 
 # restrict our dataset to the selected ids
-my_data <- filter(data, id %in% rows_per_id$id)
+my_data <- filter(data_days, id %in% rows_per_id$id)
 
 distinct(my_data, id)
 
-# Data linearization for stretched-exponential decay
-
-df2 <- my_data %>% select(id, run_date_in_days, run_time_percentage) 
-df1 <- df2 %>% mutate(log_improvement=log(run_time_percentage/100)) %>%
-  filter(log_improvement<0) %>% 
-  mutate(log_log_improvement=log(-log_improvement),
-         log_time = log(run_date_in_days))
 
 #ids <- sample(df1$id, replace= TRUE, 15)
 
@@ -52,46 +51,96 @@ bad_ids <- c("9d3rvzwdmke9evjdgame-level",
              "pd0qq4v1824le9gdgame-level",
              "yd478gde5dw43j0k29vgzgl9",
              "yd478gde5dw43j0k592m4m3w",
-             "pd0wpq21ndx79m12xd01rljw")
+             "pd0wpq21ndx79m12xd01rljw",
+             "369p7el1zd3wng8kgame-level",
+             "369pqq315dw66og2game-level")
 ids <- filter(rows_per_id, !(id %in% bad_ids))$id
 
+
+# # OLD Linear fitting
+# # Data linearization for stretched-exponential decay
+# 
+# df2 <- my_data %>% select(id, run_date_in_days, run_time_percentage) 
+# df1 <- df2 %>% mutate(log_improvement=log(run_time_percentage/100)) %>%
+#   filter(log_improvement<0) %>% 
+#   mutate(log_log_improvement=log(-log_improvement),
+#          log_time = log(run_date_in_days))
+# 
+# 
+# df_fit <- NULL
+# 
+# for (my_id in ids) {
+# 
+#   d <-df1 %>% filter(id == my_id) %>% select(id, log_time, log_log_improvement)
+#   
+#   fit <- lm(log_log_improvement ~ log_time, data = d) # fit the model
+#   d$predicted <- predict(fit)   # Save the predicted values
+#   d$residuals <- residuals(fit) # Save the residual values
+# 
+#   print("")
+#   print(paste("now id = ", my_id))
+# 
+#   
+#   beta0 <- summary(fit)$coeff[1,"Estimate"]
+#   beta1 <- summary(fit)$coeff[2,"Estimate"]
+#   tau0 <- exp(-beta0/beta1)
+#   p_val <- summary(fit)$coeff[2,4]
+#   R_sq <- summary(fit)$r.squared
+#   R_sq_adj <- summary(fit)$adj.r.squared
+#   
+#   
+#   if (is.na(beta1)){
+#     print(paste0("ACHTUNG we have a problem at id = ", my_id)) 
+#     print(summary(fit))
+#     break
+#   } 
+#   
+#   row <- data.frame(my_id, beta0, beta1, tau0, R_sq, R_sq_adj, p_val)
+#   
+#   print(row)
+#     
+#   df_fit <- rbind(df_fit, row)
+#     
+# }
+# 
+# colnames(df_fit) <- c("id", "beta0", "beta1", "tau0","R_sq", "R_sq_adj", "p_val")
+# 
+# dim(df_fit)
+# df_fit %>% formattable()
+# 
+# # END OLD 
+
 df_fit <- NULL
+length(ids)
+ids[-1:-19]
+tail(ids,3)
 
 for (my_id in ids) {
+  
+  print(paste0("id =", my_id))
+  
+  d <-my_data %>% filter(id == my_id) %>% 
+    mutate(run_time_improvement = run_time_percentage/100) %>%
+    select(run_date_in_days, run_time_improvement)
 
-  d <-df1 %>% filter(id == my_id) %>% select(id, log_time, log_log_improvement)
+  # initial guess of predictors
+  I_inf<- min(d$run_time_improvement)
+  lambda <- -log(I_inf)/max(d$run_date_in_days) # (1-I_inf)/max(d$run_date_in_days)
+  beta <- 1.
+  iter_max <- 4000
   
-  fit <- lm(log_log_improvement ~ log_time, data = d) # fit the model
-  d$predicted <- predict(fit)   # Save the predicted values
-  d$residuals <- residuals(fit) # Save the residual values
-
-  print("")
-  print(paste("now id = ", my_id))
-
-  
-  beta0 <- summary(fit)$coeff[1,"Estimate"]
-  beta1 <- summary(fit)$coeff[2,"Estimate"]
-  tau0 <- exp(-beta0/beta1)
-  p_val <- summary(fit)$coeff[2,4]
-  R_sq <- summary(fit)$r.squared
-  R_sq_adj <- summary(fit)$adj.r.squared
-  
-  
-  if (is.na(beta1)){
-    print(paste0("ACHTUNG we have a problem at id = ", my_id)) 
-    print(summary(fit))
-    break
-  } 
-  
-  row <- data.frame(my_id, beta0, beta1, tau0, R_sq, R_sq_adj, p_val)
+  row <- stretched_exp_fit(d, lambda, beta, I_inf, iter_max) %>% 
+    mutate(id=my_id)
   
   print(row)
-    
-  df_fit <- rbind(df_fit, row)
-    
+  
+  df_fit <- rbind(df_fit, row)  
+  
 }
 
-colnames(df_fit) <- c("id", "beta0", "beta1", "tau0","R_sq", "R_sq_adj", "p_val")
+
+# write file out
+write.csv(df_fit, write_output_filename)
 
 dim(df_fit)
 df_fit %>% formattable()
