@@ -43,6 +43,6 @@ my_R_Sq <- function(measure, prediction, k){
   R_sq_adj <- rss*(n-1)/(tss*(n-k-1)) 
   R_sq_adj <- 1-R_sq_adj 
   
-  return(R_sq_adj)  
+  return(R_sq)  
 }
 

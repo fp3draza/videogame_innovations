@@ -117,21 +117,10 @@ ggplot(d,aes(x = log_time, y = log_log_improvement)) +
 
 # NON LINEAR FIT 
 
-my_id <- "268erm76vdoxgl9dgame-level" 
+my_id <- "268erm76vdoxgl9dgame-level" # bad old fit
+#my_id <- "369p9l1l7kjzj3d3game-level"	# good old fitting 
 
-filter(df_fit, id==my_id)$beta0
-
-
-lambda <- summary(fitStrExp)$coeff[1,"Estimate"] # exp(filter(df_fit, id==my_id)$beta0)
-beta1 <- 1. #summary(fitStrExp)$coeff[2,"Estimate"] #filter(df_fit, id==my_id)$beta1
-I_inf <- summary(fitStrExp)$coeff[3,"Estimate"]
-
-ggplot(filter(my_data,id == my_id), aes(x = run_date_in_days, y = run_time_percentage/100)) + geom_line(aes(group = id), size = 0.07,color="blue") + 
-  geom_point(size = 0.5, color="blue") + 
-  stat_function(fun = function(x) stretched_exp(x,lambda,beta1,I_inf), color ="red", linetype = "dotted") +
-  theme_minimal() + xlab('days since first record') + ylab('percentage of time first record') + 
-  theme(aspect.ratio = 1) #+   xlim(c(1000,1100)) 
-
+filter(df_fit, id==my_id)
 
 
 ## without conditional linearity
@@ -142,14 +131,27 @@ d <-my_data %>% filter(id == my_id) %>%
 
 dim(d)
 
+
+source("./code/analyse_data/functions_fit.R")
+
+# initial guess of predictors
 I_inf<- min(d$run_time_improvement)
-lambda <- log(1-I_guess)/(min(d$run_date_in_days)-max(d$run_date_in_days))
+lambda <- log(1-I_inf)/(min(d$run_date_in_days)-max(d$run_date_in_days))
 beta <- 1.
+iter_max <- 4000
+
+df_conv <- stretched_exp_fit(d, lambda, beta, I_inf, iter_max)
+
+df_conv %>%  formattable()
+
+R_sq_old <- 0.
+epsilon_R_sq <-1e-7
 
 df_conv <- NULL
 
-for (iter in seq(1,6)){
+for (iter in seq(1,iter_max)){
   
+  convergence <- FALSE
   print(iter)
   
   # redefine initial guess
@@ -158,18 +160,15 @@ for (iter in seq(1,6)){
   I_guess <- I_inf
   
   if(iter%%2 == 0) {
-    print(iter)
 
     fitStrExp <- nlsLM(run_time_improvement ~ stretched_exp(run_date_in_days, lambda_guess, beta, I_guess),
                        start = list(beta = beta_guess),
                        lower = c(0),
                        data = d)      
     # get fitted predictors  
+    beta <- summary(fitStrExp)$coeff[1,"Estimate"]
+    beta_err <- summary(fitStrExp)$coeff[1,"Std. Error"]
     
-    print(coef(fitStrExp))
-    
-    beta <- coef(fitStrExp)["beta"]
-      
   }
   else 
   {
@@ -179,38 +178,74 @@ for (iter in seq(1,6)){
                        lower = c(0,0),
                        data = d)      
     # get fitted predictors  
-    print(coef(fitStrExp))
-    lambda <- coef(fitStrExp)["lambda"]
-    I_inf <- coef(fitStrExp)["I_inf"]
-    if(is.na(I_inf)){
-      print("achtung I_inf NA")
-      I_inf=0
-    }
+    lambda <- summary(fitStrExp)$coeff[1,"Estimate"]
+    lambda_err <- summary(fitStrExp)$coeff[1,"Std. Error"]
+    I_inf <- summary(fitStrExp)$coeff[2,"Estimate"]
+    I_inf_err <- summary(fitStrExp)$coeff[2,"Std. Error"]
+
   }
-  
+
   measure <- d$run_time_improvement 
   prediction <- fitted(fitStrExp)
   k <-length(coef(fitStrExp)) 
   R_sq <- my_R_Sq(measure, prediction, k)
+  delta_R_sq <- R_sq-R_sq_old
   
-  print("")
-  # print(iter)
-  # print(c(lambda, beta, I_inf, R_sq))
-  #df_conv <- rbind(df_conv, row)
-
+# check convergence 
+  if (delta_R_sq < epsilon_R_sq){ 
+    
+    convergence <- TRUE
+    
+    tau0 <- lambda^(-1/beta)
+    tau0_err <- lambda_err/abs(lambda*beta) # lambda contribution to the relative error 
+    tau0_err <- tau0_err + beta_err*abs(log(lambda))/(beta*beta) # beta contribution to the relative error 
+    tau0_err <- tau0_err*tau0 # from relative to absolute error 
+    
+    n <-length(measure)
+    k <- 3              # actual number of predictors // fitted parameters 
+    R_sq_adj <- (1-R_sq)*(n-1)/(n-k-1) 
+    R_sq_adj <- 1-R_sq_adj  
+    row <- data.frame(iter,lambda, lambda_err, beta, beta_err, I_inf, I_inf_err, tau0, tau0_err, R_sq, delta_R_sq, R_sq_adj, convergence)
+    df_conv <- rbind(df_conv, row)
+    
+    break
+    }
+  
+  R_sq_old <- R_sq
 }
+colnames(df_conv) <- c("iter", "lambda", "lambda_err", 
+                       "beta", "beta_err", "I_inf", "I_inf_err",
+                       "tau0","tau0_err","R_sq", "delta_R_sq",
+                       "R_sq_adj", "convergence")
+
+rownames(df_conv) <- NULL
 
 
 
 
-colnames(df_conv) <- c("iter", "lambda", "beta", "I_inf", "R_sq")
+df_conv %>%  formattable()
+
+#summary(fitStrExp)$coeff
+
+# ggplot(df_conv,aes(x = iter, y = R_sq)) +
+#   geom_line( size = 0.07,color="blue") +
+#   geom_point(size = 0.5, color="blue") +
+#   theme_minimal() + xlab('iter') + ylab('y') +
+#   theme(aspect.ratio = 1)
 
 
-summary(fitStrExp)
-measure <- d$run_time_improvement 
-prediction <- fitted(fitStrExp)
-k <-length(coef(fitStrExp)) 
-my_R_Sq(measure, prediction, k)
+lambda1 <- exp(filter(df_fit, id==my_id)$beta0)#  summary(fitStrExp)$coeff[1,"Estimate"] # exp(filter(df_fit, id==my_id)$beta0)
+beta1 <- filter(df_fit, id==my_id)$beta1 #  1. #summary(fitStrExp)$coeff[2,"Estimate"] #filter(df_fit, id==my_id)$beta1
+#I_inf <- 0
+
+ggplot(filter(my_data,id == my_id), aes(x = run_date_in_days, y = run_time_percentage/100)) + geom_line(aes(group = id), size = 0.07,color="blue") + 
+  geom_point(size = 0.5, color="blue") + 
+  stat_function(fun = function(x) stretched_exp(x,lambda,beta,I_inf), color ="purple", linetype = "solid") +
+  stat_function(fun = function(x) stretched_exp(x,lambda1,beta1,0.), color ="blue", linetype = "dotted") +
+  theme_minimal() + xlab('days since first record') + ylab('percentage of time first record') + 
+  ggtitle(paste0("bad old fit id = ",my_id)) +
+  theme(aspect.ratio = 1) #+   xlim(c(1000,1100)) 
+
 
 
 
@@ -222,5 +257,6 @@ my_R_Sq(measure, prediction, k)
 # formula(fitStrExp)
 # logLik(fitStrExp)
 # predict(fitStrExp)
+
 
 
