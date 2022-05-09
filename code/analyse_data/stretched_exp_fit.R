@@ -9,7 +9,7 @@ data <- read.csv('./clean_data/speedrun_data_clean.csv', row.names = 1)
 source("./code/analyse_data/helper.R")
 source("./code/analyse_data/functions_fit.R")
 
-write_output_filename <-'./code/fit_data_2022-05-08.csv'
+write_output_filename <-'./code/fit_res_2022-05-09.csv'
 
 colnames(data)
 
@@ -53,7 +53,8 @@ bad_ids <- c("9d3rvzwdmke9evjdgame-level",
              "yd478gde5dw43j0k592m4m3w",
              "pd0wpq21ndx79m12xd01rljw",
              "369p7el1zd3wng8kgame-level",
-             "369pqq315dw66og2game-level")
+             "369pqq315dw66og2game-level",
+             "o6g08xd2wdmxl6okgame-level")
 ids <- filter(rows_per_id, !(id %in% bad_ids))$id
 
 
@@ -138,12 +139,15 @@ for (my_id in ids) {
   
 }
 
+# last one yo1yv1q5xk9l5yk0game-level
 
 # write file out
 write.csv(df_fit, write_output_filename)
 
 dim(df_fit)
 df_fit %>% formattable()
+
+# UP TO HERE NEW 
 
 # add the column run_date_in_days_max to df_fit
 df_fit <- df_fit %>% left_join(., df_run_date_max, by = c("id" = "id")) 
@@ -156,47 +160,55 @@ df_fit <- df_fit %>% left_join(., df_run_date_max, by = c("id" = "id"))
 # good_ids <- (filter(df_fit, R_sq_adj > 0.93) %>% filter(beta1>1))$id
 # good_ids <- (filter(df_fit, R_sq_adj > 0.9))$id
 
-#  
-selected_tmp <- filter(df_fit, (tau0 >1) & (tau0 < 5*run_date_in_days_max)) %>% # & (R_sq_adj > 0.6)) %>%
-  select(id, R_sq, R_sq_adj,tau0, run_date_in_days_max) #%>% head(20)
+# selected_tmp <- filter(df_fit, (tau0 < 5*run_date_in_days_max)) %>% # & (R_sq_adj > 0.6)) %>%
+#   select(id, R_sq, R_sq_adj,tau0, run_date_in_days_max) #%>% head(20)
+# # NOW it does not look to be so crucial 
+# exp(-1./5)
+# dim(selected_tmp)
+# selected_tmp %>% formattable()
+# 
+# selected_ids <- (filter(df_fit, (R_sq_adj > 0.6) & (tau0 >1) & (tau0<tau_max) ))$id
+# length(selected_ids)
+# filter(df_fit, id %in% selected_ids) %>% formattable()
 
 
-exp(-1./5)
 
-dim(selected_tmp)
+# create categorical variables 
+df_res <- df_fit %>% filter(.,tau0 < 5*run_date_in_days_max) %>% 
+  mutate(R_sq_cat = trunc(10*R_sq_adj,0), 
+                         beta_cat = if_else(beta<3, trunc(beta,0), 3),
+                           tau0_cat = if_else(tau0<1e3, 0, 1))
 
-selected_tmp %>% formattable()
+dim(df_res)
 
-selected_ids <- (filter(df_fit, (R_sq_adj > 0.6) & (tau0 >1) & (tau0<tau_max) ))$id
-length(selected_ids)
-filter(df_fit, id %in% selected_ids) %>% formattable()
+df_res %>% select(id, tau0, tau0_cat) %>% formattable()
 
+filter(df_res,(R_sq_cat >=7) & (trunc(beta)==3))#  R_sq_cat >=7 fits are good ! 
+
+dim(filter(df_res,R_sq_cat >=7))
+
+filter(df_res, id =="nd28g83d7dgmvnxdgame-level")
+
+dim(df_res). # 221 => 166 (train) + 55 (test) 
 
 # DISPLAY HISTOGRAMS for fitted parameters 
 # beta1 
-ggplot(filter(df_fit, id %in% selected_ids), aes(x=beta1)) +
-  geom_histogram() + geom_density(color="red") + 
-  xlim(0,3.2)
-
-filter(df_fit, (beta1>2) & (beta1<3) & (id %in% selected_ids)) # not even one between 3 and 4
-filter(df_fit, (beta1>4) & (id %in% selected_ids)) # => sudden drop sigmoid like 
+ggplot(filter(df_res,(R_sq_cat >=7)), aes(x=beta)) +
+  geom_histogram()# + 
+  #geom_density(color="red") # +    xlim(0,3.2)
 
 # tau0
-ggplot(filter(df_fit, id %in% selected_ids), aes(x=tau0)) +
-  geom_histogram(binwidth=1000, boundary = 0, color="blue") 
+ggplot(filter(df_res,R_sq_cat >=7), aes(x=tau0)) +  
+  geom_density(color="red") + # xlim(0,3000)
+  geom_histogram(binwidth=200, boundary = 0, color="blue")  
+  # scale_x_continuous(trans='log10') +
+  # scale_y_continuous(trans='log10') 
 
 filter(df_fit, (tau0>1000) & (tau0<2000) & (id %in% selected_ids)) 
 
 dim(filter(df_fit, (tau0<=1000) & (id %in% selected_ids))) # 138/221
 
 
-# create categorical variables 
-df_res <- filter(df_fit, id %in% selected_ids) %>% mutate(beta1_cat = beta_classifier_V(beta1),
-                                               tau0_cat = tau_classifier_V(tau0))
-
-df_res %>% formattable() 
-
-dim(df_res). # 221 => 166 (train) + 55 (test) 
 
 # OSS 
 # we could consider creating less categories for tau maybe just smaller/larger than 1000 days (138/221)
@@ -215,7 +227,7 @@ dim(df_res). # 221 => 166 (train) + 55 (test)
 
 # staircase "268exwy6vdo31v9dgame-level"  
 
-my_id <- "268erm76vdoxgl9dgame-level" 
+my_id <- "268exwy6vdo31v9dgame-level" 
 
 filter(df_fit, id==my_id)$beta0
 lambda <- exp(filter(df_fit, id==my_id)$beta0)

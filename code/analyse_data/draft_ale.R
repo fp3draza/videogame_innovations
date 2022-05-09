@@ -120,7 +120,7 @@ ggplot(d,aes(x = log_time, y = log_log_improvement)) +
 #my_id <- "268erm76vdoxgl9dgame-level" # bad old fit
 #my_id <- "369p9l1l7kjzj3d3game-level"	# good old fitting 
 
-my_id <- "268wlo6pxd13oxrkgame-level"
+my_id <- "w6jnv51j9kvpqo0kgame-level"
 
 filter(df_fit, id==my_id)
 
@@ -166,12 +166,10 @@ beta1 <- filter(df_fit, id==my_id)$beta1 #  1. #summary(fitStrExp)$coeff[2,"Esti
 #I_inf <- 0
 
 
-filter(df_fit, id == "369pky817kj8o5gdgame-level")
+filter(df_fit, id == "w6jnv51j9kvpqo0kgame-level") %>% select(id, I_inf, R_sq_adj, convergence)
 
-select(df_fit, id, I_inf, R_sq_adj, convergence)
-
-my_id <- "268erm76vdoxgl9dgame-level"
-tmp <- filter(df_conv, id == my_id)
+my_id <- "yd478gde5dw43j0kewpn8nj9"
+tmp <- filter(df_fit, id == my_id) # tmp <- filter(df_conv, id == my_id)
 lambda <- tmp$lambda
 beta <- tmp$beta
 I_inf <- tmp$I_inf
