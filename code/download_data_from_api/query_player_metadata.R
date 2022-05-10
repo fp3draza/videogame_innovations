@@ -8,8 +8,9 @@ fetch_player_metadata_from_api <- function(player_id_string){
   
   # try to fetch data from api
   player_data <- try(jsonlite::fromJSON(player_string), silent = TRUE)
-  player_runs <- try(jsonlite::fromJSON(paste0('https://www.speedrun.com/api/v1/runs?user=', player_id_string)))
-  player_pb <- try(jsonlite::fromJSON(paste0('https://www.speedrun.com/api/v1/users/', player_id_string,'/personal-bests')))
+  player_runs <- try(jsonlite::fromJSON(paste0('https://www.speedrun.com/api/v1/runs?user=', player_id_string,'&max=200')), silent = TRUE)
+  Sys.sleep(1)
+  player_pb <- try(jsonlite::fromJSON(paste0('https://www.speedrun.com/api/v1/users/', player_id_string,'/personal-bests')), silent = TRUE)
   
   # if the request gives an erorr, return empty data
   if (class(player_data) == 'try-error' ) {
@@ -22,18 +23,18 @@ fetch_player_metadata_from_api <- function(player_id_string){
     
     date_signup <- c("NA")
     
-    developers <- c("NA")
+    total_runs <- c("NA")
     
-    publishers <- c("NA")
+    games_played <- c("NA")
     
-    discord <- c("NA")
+    median_comment_length <- c("NA")
     
-    require_video <- c("NA")
+    fraction_of_wr_runs <- c("NA")
     
-    emulators_allowed <- c("NA")
+    median_pb_position <- c("NA")
     
-    level_data <- c(game_id_string, released, romhack, platforms, genres, developers, publishers,
-                    discord, require_video, emulators_allowed)
+    player_data <- c(player_id_string, country_code, has_twitch, has_youtube, date_signup, total_runs, games_played,
+                    median_comment_length, fraction_of_wr_runs, median_pb_position)
     
   }
   
@@ -54,33 +55,49 @@ fetch_player_metadata_from_api <- function(player_id_string){
       has_youtube <- FALSE
     }
     
-    date_signup <- as.Date(player_data$data$signup)
+    date_signup <- substr((player_data$data$signup), start = 1, stop = 4)
+    
+    total_runs <- length(unique(player_runs$data$id))
+    
+    games_played <- length(unique(player_runs$data$game))
+    
+    median_comment_length <- median(nchar(player_runs$data$comment), na.rm = TRUE)
+    
+    fraction_of_wr_runs <- sum(player_pb$data$place == 1)/length(unique(player_runs$data$id))
+    
+    median_pb_position <- median(player_pb$data$place)
     
    
-    level_data <- c(game_id_string, released, romhack, platforms, genres, developers, publishers,
-                    discord, require_video, emulators_allowed)
+    player_data <- c(player_id_string, country_code, has_twitch, has_youtube, date_signup, total_runs, games_played,
+                    median_comment_length, fraction_of_wr_runs, median_pb_position)
     
   }
   
   # return data
-  return(level_data)
+  return(player_data)
 }
 
-get_game_metadata <- function(data_to_use){
+get_player_metadata <- function(data_to_use){
   
   # obtain list of game ids
-  list_of_game_ids <- unique(data_to_use$game_id_string)
+  list_of_player_ids <- unique(data_to_use$run_player_id)
   
   # create empty dataframe
   df <- NULL
+  # counter
+  counter <- 1
   
-  for (game in list_of_game_ids) {
+  for (player in list_of_player_ids) {
     
-    print(game)
-    
-    # fetch metadata for current game
-    current_game_metadata <- fetch_game_metadata_from_api(game)
-    
+    # fetch metadata for current player
+    print(player)
+    current_game_metadata <- fetch_player_metadata_from_api(player)
+    counter <- counter + 1
+    if (counter%%20 == 0) {
+      Sys.sleep(7)
+    }
+    print(paste0('progress: ', round(counter/length(list_of_player_ids), digits = 3)))
+          
     # add metadata to dataframe
     df <- rbind(df, current_game_metadata)
     
@@ -88,8 +105,8 @@ get_game_metadata <- function(data_to_use){
   
   df <- as.data.frame(df)
   rownames(df) <- NULL
-  colnames(df) <- c('game_id_string', 'year_released', 'romhack', 'number_platforms','genre','developer',
-                    'publisher', 'discord', 'require_video', 'emulators_allowed')
+  colnames(df) <- c('player_id_string', 'country_code', 'has_twitch', 'has_youtube', 'date_signup', 'total_runs', 'games_played',
+                    'median_comment_length', 'fraction_of_wr_runs', 'median_pb_position')
   
   # return
   return(df)
