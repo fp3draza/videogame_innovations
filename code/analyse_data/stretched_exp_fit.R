@@ -181,7 +181,12 @@ df_res <- df_fit %>% filter(.,tau0 < 5*run_date_in_days_max) %>%
 
 dim(df_res)
 
-df_res %>% select(id, tau0, tau0_cat) %>% formattable()
+df_res %>% formattable()
+
+# write file out
+write.csv(df_res, write_output_filename)
+
+
 
 filter(df_res,(R_sq_cat >=7) & (trunc(beta)==3))#  R_sq_cat >=7 fits are good ! 
 
@@ -198,11 +203,12 @@ ggplot(filter(df_res,(R_sq_cat >=7)), aes(x=beta)) +
   #geom_density(color="red") # +    xlim(0,3.2)
 
 # tau0
-ggplot(filter(df_res,R_sq_cat >=7), aes(x=tau0)) +  
-  geom_density(color="red") + # xlim(0,3000)
-  geom_histogram(binwidth=200, boundary = 0, color="blue")  
-  # scale_x_continuous(trans='log10') +
-  # scale_y_continuous(trans='log10') 
+ggplot(filter(df_res,(R_sq_cat >=7)), aes(x=tau0)) +  
+  #geom_density(color="red") + xlim(0,3000) 
+  geom_histogram(binwidth=20, boundary = 0, color="blue") 
+  #scale_x_log10()
+   # scale_x_continuous(trans='log10') +
+   # scale_y_continuous(trans='log10') 
 
 filter(df_fit, (tau0>1000) & (tau0<2000) & (id %in% selected_ids)) 
 
