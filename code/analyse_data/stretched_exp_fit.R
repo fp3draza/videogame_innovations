@@ -9,7 +9,7 @@ data <- read.csv('./clean_data/speedrun_data_clean.csv', row.names = 1)
 source("./code/analyse_data/helper.R")
 source("./code/analyse_data/functions_fit.R")
 
-write_output_filename <-'./code/fit_res_2022-05-09.csv'
+write_output_filename <-'./code/fit_res_2022-05-11.csv'
 
 colnames(data)
 
@@ -176,12 +176,13 @@ df_fit <- df_fit %>% left_join(., df_run_date_max, by = c("id" = "id"))
 # create categorical variables 
 df_res <- df_fit %>% filter(.,tau0 < 5*run_date_in_days_max) %>% 
   mutate(R_sq_cat = trunc(10*R_sq_adj,0), 
-                         beta_cat = if_else(beta<3, trunc(beta,0), 3),
-                           tau0_cat = if_else(tau0<1e3, 0, 1))
+                         beta_cat = if_else(beta<3, trunc(beta), 3),
+                           tau0_cat = if_else(tau0<2e3, trunc(tau0/500), -1))
 
-dim(df_res)
+distinct(df_res,beta_cat)
+dim(filter(df_res,tau0_cat==-1))
 
-df_res %>% formattable()
+df_res %>% select(id,tau0,tau0_cat) %>% formattable()
 
 # write file out
 write.csv(df_res, write_output_filename)
@@ -205,7 +206,7 @@ ggplot(filter(df_res,(R_sq_cat >=7)), aes(x=beta)) +
 # tau0
 ggplot(filter(df_res,(R_sq_cat >=7)), aes(x=tau0)) +  
   #geom_density(color="red") + xlim(0,3000) 
-  geom_histogram(binwidth=20, boundary = 0, color="blue") 
+  geom_histogram(binwidth=500, boundary = 0, color="blue") 
   #scale_x_log10()
    # scale_x_continuous(trans='log10') +
    # scale_y_continuous(trans='log10') 

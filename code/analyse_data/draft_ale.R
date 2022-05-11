@@ -168,7 +168,7 @@ beta1 <- filter(df_fit, id==my_id)$beta1 #  1. #summary(fitStrExp)$coeff[2,"Esti
 
 filter(df_fit, id == "w6jnv51j9kvpqo0kgame-level") %>% select(id, I_inf, R_sq_adj, convergence)
 
-my_id <- "9dowpe1pvdo3l9dpgame-level"
+my_id <- "268ex4o6w20ylqjkgame-level"
 tmp <- filter(df_fit, id == my_id) # tmp <- filter(df_conv, id == my_id)
 lambda <- tmp$lambda
 beta <- tmp$beta
@@ -194,24 +194,25 @@ ggplot(filter(my_data,id == my_id), aes(x = run_date_in_days, y = run_time_perce
 # logLik(fitStrExp)
 # predict(fitStrExp)
 
-my_breaks <- seq(1,11000,40)
+my_breaks <- seq(1,11000,100)
 
 df <- NULL
 for(my_cat in unique(df_res$beta_cat)){
   tau <- filter(df_res,(R_sq_cat >=7) & (beta_cat == my_cat))$tau0 
   h_tau <- hist(tau, freq = TRUE, breaks = my_breaks) 
-  df <- rbind(df, data.frame(h_tau$breaks[-length(h_tau$breaks)], h_tau$counts, my_cat))
+  df <- rbind(df, data.frame(h_tau$breaks[-length(h_tau$breaks)], h_tau$counts/max(h_tau$counts), my_cat))
 }
 
-colnames(df) <- c("tau_intervals", "counts", "beta_cat")
+colnames(df) <- c("tau_intervals", "norm_counts", "beta_cat")
 
 distinct(df, beta_cat) 
+head(df)
 
-ggplot(filter(df, counts > 1 & beta_cat >1), aes(x = tau_intervals, y = counts, col=as.factor(beta_cat))) + 
+ggplot(filter(df, norm_counts > 0.), aes(x = tau_intervals, y = norm_counts, col = as.factor(beta_cat))) + 
   geom_point(size = 1.2) + 
-  #stat_function(fun = function(x) power_law(x,80,-0.5), color ="orange", linetype = "solid") +
-  stat_function(fun = function(x) power_law(x,50,-0.5), color ="blue", linetype = "solid") +
+  stat_function(fun = function(x) power_law(x,9.5,-0.75), color ="red", linetype = "solid") +
+  #stat_function(fun = function(x) power_law(x,50,-0.5), color ="blue", linetype = "solid") +
   theme_minimal() + #ylab('tau0') # + xlab('beta') +
   theme(aspect.ratio = 1) +
-scale_x_continuous(trans='log10') +
+  scale_x_continuous(trans='log10') +
   scale_y_continuous(trans='log10')
