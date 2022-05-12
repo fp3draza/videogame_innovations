@@ -177,7 +177,7 @@ df_fit <- df_fit %>% left_join(., df_run_date_max, by = c("id" = "id"))
 df_res <- df_fit %>% filter(.,tau0 < 5*run_date_in_days_max) %>% 
   mutate(R_sq_cat = trunc(10*R_sq_adj,0), 
                          beta_cat = if_else(beta<3, trunc(beta), 3),
-                           tau0_cat = if_else(tau0<2e3, trunc(tau0/500), -1))
+                         tau0_cat = if_else(tau0<2e3, trunc(tau0/500), -1))
 
 distinct(df_res,beta_cat)
 dim(filter(df_res,tau0_cat==-1))
@@ -195,21 +195,7 @@ dim(filter(df_res,R_sq_cat >=7))
 
 filter(df_res, id =="nd28g83d7dgmvnxdgame-level")
 
-dim(df_res). # 221 => 166 (train) + 55 (test) 
-
-# DISPLAY HISTOGRAMS for fitted parameters 
-# beta1 
-ggplot(filter(df_res,(R_sq_cat >=7)), aes(x=beta)) +
-  geom_histogram()# + 
-  #geom_density(color="red") # +    xlim(0,3.2)
-
-# tau0
-ggplot(filter(df_res,(R_sq_cat >=7)), aes(x=tau0)) +  
-  #geom_density(color="red") + xlim(0,3000) 
-  geom_histogram(binwidth=500, boundary = 0, color="blue") 
-  #scale_x_log10()
-   # scale_x_continuous(trans='log10') +
-   # scale_y_continuous(trans='log10') 
+dim(df_res)
 
 filter(df_fit, (tau0>1000) & (tau0<2000) & (id %in% selected_ids)) 
 
