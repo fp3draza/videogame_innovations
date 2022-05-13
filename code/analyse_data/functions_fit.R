@@ -1,3 +1,4 @@
+
 stretched_exp_fit <- function(df, lambda = 0.1, 
                               beta  = 1,
                               I_inf = 0.5, 
@@ -5,13 +6,11 @@ stretched_exp_fit <- function(df, lambda = 0.1,
   
   R_sq_old <- 0.
   epsilon_R_sq <-1e-7
-  
   df_res <- NULL
   
   for (iter in seq(1,iter_max)){
     
     convergence <- FALSE
-    # print(iter)
     
     # redefine initial guess
     lambda_guess <- lambda
@@ -27,10 +26,10 @@ stretched_exp_fit <- function(df, lambda = 0.1,
       # get fitted predictors  
       beta <- summary(fitStrExp)$coeff[1,"Estimate"]
       beta_err <- summary(fitStrExp)$coeff[1,"Std. Error"]
-      
     }
     else 
     {
+      
       fitStrExp <- nlsLM(run_time_improvement ~ stretched_exp(run_date_in_days, lambda, beta_guess, I_inf),
                          start = list(lambda = lambda_guess, 
                                       I_inf = I_guess),
@@ -41,7 +40,6 @@ stretched_exp_fit <- function(df, lambda = 0.1,
       lambda_err <- summary(fitStrExp)$coeff[1,"Std. Error"]
       I_inf <- summary(fitStrExp)$coeff[2,"Estimate"]
       I_inf_err <- summary(fitStrExp)$coeff[2,"Std. Error"]
-      
     }
     
     measure <- d$run_time_improvement 
@@ -52,6 +50,7 @@ stretched_exp_fit <- function(df, lambda = 0.1,
     
     # check convergence 
     if (abs(delta_R_sq) < epsilon_R_sq || iter == iter_max){ 
+      
       
       if (iter != iter_max) convergence <- TRUE
       
@@ -68,15 +67,15 @@ stretched_exp_fit <- function(df, lambda = 0.1,
       row <- data.frame(iter,lambda, lambda_err, beta, beta_err, I_inf, I_inf_err, tau0, tau0_err, R_sq, delta_R_sq, R_sq_adj, convergence)
       df_res <- rbind(df_res, row)
       
-      break
+      break    
     }
     
     R_sq_old <- R_sq
   }
-    colnames(df_res) <- c("iter", "lambda", "lambda_err",
-                          "beta", "beta_err", "I_inf", "I_inf_err",
-                          "tau0","tau0_err","R_sq", "delta_R_sq",
-                          "R_sq_adj", "convergence")
+  colnames(df_res) <- c("iter", "lambda", "lambda_err",
+                        "beta", "beta_err", "I_inf", "I_inf_err",
+                        "tau0","tau0_err","R_sq", "delta_R_sq",
+                        "R_sq_adj", "convergence")
   
   rownames(df_res) <- NULL
   return(df_res)

@@ -4,8 +4,8 @@ require(dplyr)
 require(cowplot)
 require(igraph)
 
-setwd('~/videogame_innovations/code')
-data <- read.csv('../speedrun_data_clean.csv', row.names = 1)
+setwd('~/videogame_innovations/')
+data <- read.csv('./clean_data/speedrun_data_clean.csv', row.names = 1)
 source("./code/analyse_data/helper.R")
 
 ids <- filter(data, run_date_in_seconds > 1000)  %>% distinct(id)  #%>% filter(., run_time_percentage < 90)

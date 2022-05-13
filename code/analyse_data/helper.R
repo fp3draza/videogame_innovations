@@ -46,3 +46,9 @@ my_R_Sq <- function(measure, prediction, k){
   return(R_sq)  
 }
 
+normalized_decay <-function(decay_perc, I_inf){
+  decay <- decay_perc/100
+  normalized <- decay - I_inf
+  normalized <- normalized/(1-I_inf)
+  return(normalized)
+}

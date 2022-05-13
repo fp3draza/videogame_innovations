@@ -13,7 +13,7 @@ require(igraph)
 
 
 ```{r load-data, echo = FALSE}
-data <- read.csv('../speedrun_data_clean.csv', row.names = 1)
+data <- read.csv("~/videogame_innovations/clean_data/speedrun_data_clean.csv", row.names = 1)
 ```
 
 ## World Record Trajectories
@@ -24,16 +24,16 @@ ggplot(data, aes(x = normalised_run_date, y = normalised_run_time)) + geom_line(
 
 
 ```{r, echo = FALSE,  message=FALSE, warning=FALSE}
-ggplot(data, aes(x = run_date_in_seconds, y = run_time_percentage)) + geom_line(aes(group = id), size = 0.02)  + theme_minimal() + xlab('Seconds since first record') + ylab('Percentage of time first record') + theme(aspect.ratio = 1)
+ggplot(data, aes(x = run_date_in_days, y = run_time_percentage)) + geom_line(aes(group = id), size = 0.02)  + theme_minimal() + xlab('days since first record') + ylab('percentage of time first record') + theme(aspect.ratio = 1)
 ```
 
 
 ```{r, echo = FALSE,  message=FALSE, warning=FALSE}
-ggplot(data, aes(x = run_date_in_seconds, y = run_time_standard)) + geom_line(aes(group = id), size = 0.02)  + theme_minimal() + xlab('Seconds since first record') + ylab('Time reduced from first record') + theme(aspect.ratio = 1)
+ggplot(data, aes(x = run_date_in_days, y = run_time_standard)) + geom_line(aes(group = id), size = 0.02)  + theme_minimal() + xlab('days since first record') + ylab('Time reduced from first record') + theme(aspect.ratio = 1)
 ```
 
 
 ```{r, echo = FALSE,  message=FALSE, warning=FALSE}
-ggplot(data, aes(x = run_date_in_seconds, y = run_time)) + geom_line(aes(group = id), size = 0.02)  + theme_minimal() + xlab('Seconds since first record') + ylab('Raw run time') + theme(aspect.ratio = 1)
+ggplot(data, aes(x = run_date_in_days, y = run_time)) + geom_line(aes(group = id), size = 0.02)  + theme_minimal() + xlab('days since first record') + ylab('Raw run time') + theme(aspect.ratio = 1)
 ```
 drm(Y ~ X, fct = DRC.logCurve() )
