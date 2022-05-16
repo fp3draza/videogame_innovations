@@ -8,6 +8,7 @@ library(scales)
 source("./code/analyse_data/helper.R")
 
 # load cleaned data / fitting results 
+data <- read.csv('./data/raw/speedrun_data_clean_old.csv', row.names = 1)
 fit_data <- read.csv('./data/processed/fit_data.csv', row.names = 1)
 df_res <- read.csv('./data/processed/fit_res.csv', row.names = 1)
 
