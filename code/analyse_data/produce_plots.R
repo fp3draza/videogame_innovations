@@ -7,15 +7,19 @@ library(latex2exp)
 library(scales)
 source("./code/analyse_data/helper.R")
 
+# load cleaned data / fitting results 
+fit_data <- read.csv('./clean_data/fit_data.csv', row.names = 1)
+df_res <- read.csv('./clean_data/fit_res.csv', row.names = 1)
+
 ###################################################
 # RAW DATA: record development per game 
 
-ggplot(data, aes(x = run_date_in_days, y = run_time, col = as.factor(id))) + geom_line(aes(group = id), size = 0.02)  +
- theme_minimal() + xlab('days since first record') + ylab('Raw run time [seconds ?]') + 
+ggplot(data, aes(x = run_date_in_days, y = run_time, col = as.factor(id))) + geom_line(aes(group = id), size = 0.3)  +
+ theme_minimal() + xlab('days since first record') + ylab('Raw run time [s]') + 
  scale_y_continuous(trans='log10') +
  theme(aspect.ratio = 1, legend.position="none")
 
-ggplot(data, aes(x = run_date_in_days, y = run_time_percentage/100, col = as.factor(id))) + geom_line(aes(group = id), size = 0.02)  +
+ggplot(data, aes(x = run_date_in_days, y = run_time_percentage/100, col = as.factor(id))) + geom_line(aes(group = id), size = 0.3)  +
  theme_minimal() + xlab('days since first record') + ylab('percentage of time first record') +
  theme(aspect.ratio = 1, legend.position="none")
 
@@ -122,7 +126,7 @@ source("./code/analyse_data/functions_fit.R")
 my_id <- "w6jnv51j7dg5ypp2game-level"
 iter_max <- 1000
 
-d <-my_data %>% filter(id == my_id) %>% 
+d <-fit_data %>% filter(id == my_id) %>% 
   mutate(run_time_improvement = run_time_percentage/100) %>%
   select(run_date_in_days, run_time_improvement)
 
@@ -144,11 +148,7 @@ ggplot(df, aes(x = iter, y = R_sq)) +
 ###################################################
 # DATA COLLAPSE - per beta categories 
 
-df_tmp <- my_data %>% left_join(., df_res_filtered, by = c("id" = "id"))   
-
-#OLD
-#my_ids0 <- (filter(df_tmp, (beta > 0) & (beta < 1) & (I_inf > 0.) & (I_inf < 0.1) & tau0_err/tau0 <0.4) %>% distinct(id))$id
-#I0 <- mean(filter(df_tmp,id %in% my_ids1)$I_inf)
+df_tmp <- fit_data %>% left_join(., df_res_filtered, by = c("id" = "id"))   
 
 my_ids0 <- (filter(df_tmp, (beta > 0.) & (beta < 1.0) & tau0_err/tau0 <0.4) %>% distinct(id))$id
 beta0 <- mean(filter(df_tmp,id %in% my_ids0)$beta)
@@ -233,7 +233,8 @@ ggplot(filter(df_tmp,id == my_id), aes(x = run_date_in_days, y = run_time_percen
 # beta
 # counts 
 ggplot(df_res_filtered, aes(x=beta)) +
-  geom_histogram(freq = TRUE, breaks = seq(0,10,0.5), color="orange")
+#geom_histogram(freq = TRUE, breaks = seq(0,10,0.5), color="orange")
+geom_histogram(freq = TRUE, breaks = seq(0,10,1), color="orange") # beta categories 
 #geom_density(color="red") +  xlim(0,3.2)
 
 # count curves falling in each beta category 
@@ -249,7 +250,7 @@ dim(df_res_filtered)
 
 ggplot(df_res_filtered, aes(x=tau0)) +  
   geom_histogram(freq = TRUE, breaks = seq(0,2500,30), color ="purple") +
-# scale_x_continuous(trans='log10') +
+#  geom_histogram(freq = TRUE, breaks = seq(0,2500,500), color ="purple") + # tau0 categories 
  scale_y_continuous(trans='log10') +
   xlab(TeX("$tau_0$"))
 

@@ -9,7 +9,8 @@ data <- read.csv('./clean_data/speedrun_data_clean.csv', row.names = 1)
 source("./code/analyse_data/helper.R")
 source("./code/analyse_data/functions_fit.R")
 
-write_output_filename <-'./code/fit_res_2022-05-12.csv'
+write_output_filename <-'./clean_data/fit_res.csv'
+write_fitdata_filename <-'./clean_data/fit_data.csv'
 
 colnames(data)
 
@@ -32,13 +33,6 @@ dim(filter(rows_per_id, n>12))/dim(rows_per_id)
 
 rows_per_id %>% formattable()
 
-
-
-# restrict our dataset to the selected ids
-my_data <- filter(data_days, id %in% rows_per_id$id)
-
-distinct(my_data, id)
-
 # remove problematic data sets
 bad_ids <- c("9d3rvzwdmke9evjdgame-level",
              "9do8jge1jdzlomr2game-level",
@@ -50,7 +44,16 @@ bad_ids <- c("9d3rvzwdmke9evjdgame-level",
              "369p7el1zd3wng8kgame-level",
              "369pqq315dw66og2game-level",
              "o6g08xd2wdmxl6okgame-level")
+
 ids <- filter(rows_per_id, !(id %in% bad_ids))$id
+
+# restrict our dataset to the selected ids
+my_data <- filter(data_days, id %in% ids)
+
+distinct(my_data, id)
+
+# save data fitted in a file
+write.csv(my_data, write_fitdata_filename)
 
 #  start non-linear fit 
 
