@@ -5,7 +5,8 @@ require(cowplot)
 require(igraph)
 
 setwd('~/videogame_innovations')
-data_old <- read.csv('./clean_data/speedrun_data_clean.csv', row.names = 1)
+data_clean <- read.csv('./data/raw/speedrun_data_clean.csv', row.names = 1)
+data_clean_old <- read.csv('./data/raw/speedrun_data_clean_old.csv', row.names = 1)
 data <- read.csv('./data/raw/speedrun_data.csv', row.names = 1)
 
 source("./code/analyse_data/helper.R")
@@ -16,8 +17,11 @@ write_fitdata_filename <-'./data/processed/fit_data.csv'
 
 colnames(data)
 
-# complete dataset
+# complete dataset ask Fernando whats the difference between 13 vs 8 column 
+# plots mad with data_clean_old (that is probably equal to data_clean)
 dim(data)
+dim(data_clean)
+dim(data_clean_old)
 
 # remove improvements occurred on day 1
 data_days <- data %>% filter(!((run_date_in_days == 1) & (run_time_percentage != 100)))
