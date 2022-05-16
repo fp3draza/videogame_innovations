@@ -8,8 +8,8 @@ library(scales)
 source("./code/analyse_data/helper.R")
 
 # load cleaned data / fitting results 
-fit_data <- read.csv('./clean_data/fit_data.csv', row.names = 1)
-df_res <- read.csv('./clean_data/fit_res.csv', row.names = 1)
+fit_data <- read.csv('./data/processed/fit_data.csv', row.names = 1)
+df_res <- read.csv('./data/processed/fit_res.csv', row.names = 1)
 
 ###################################################
 # RAW DATA: record development per game 

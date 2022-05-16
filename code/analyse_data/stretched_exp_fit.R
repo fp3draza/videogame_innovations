@@ -5,12 +5,14 @@ require(cowplot)
 require(igraph)
 
 setwd('~/videogame_innovations')
-data <- read.csv('./clean_data/speedrun_data_clean.csv', row.names = 1)
+data_old <- read.csv('./clean_data/speedrun_data_clean.csv', row.names = 1)
+data <- read.csv('./data/raw/speedrun_data.csv', row.names = 1)
+
 source("./code/analyse_data/helper.R")
 source("./code/analyse_data/functions_fit.R")
 
-write_output_filename <-'./clean_data/fit_res.csv'
-write_fitdata_filename <-'./clean_data/fit_data.csv'
+write_output_filename <-'./data/processed/fit_res.csv'
+write_fitdata_filename <-'./data/processed/fit_data.csv'
 
 colnames(data)
 
@@ -86,9 +88,6 @@ for (my_id in ids) {
   df_fit <- rbind(df_fit, row)  
   
 }
-
-# write file out
-write.csv(df_fit, write_output_filename)
 
 dim(df_fit)
 colnames(df_fit)
