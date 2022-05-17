@@ -8,7 +8,7 @@ library(scales)
 source("./code/analyse_data/helper.R")
 
 # load cleaned data / fitting results 
-data <- read.csv('./data/raw/speedrun_data_clean_old.csv', row.names = 1)
+data <- read.csv('./data/raw/speedrun_data_clean.csv', row.names = 1)
 fit_data <- read.csv('./data/processed/fit_data.csv', row.names = 1)
 df_res <- read.csv('./data/processed/fit_res.csv', row.names = 1)
 
@@ -175,7 +175,7 @@ beta <- beta2 #beta0 # beta0 # beta1
 my_ids <- my_ids2 # my_ids0 # my_ids1
 
 ggplot(filter(df_tmp,id %in% my_ids), aes(x = run_date_in_days/tau0, y = normalized_decay(run_time_percentage, I_inf), col = as.factor(id))) + 
-  geom_point(size = 0.8) + 
+  geom_point(size = 0.5) + 
   stat_function(fun = function(x) stretched_exp(x,lambda,beta,I_inf), color ="black", linetype = "solid", size = 0.5) +
   stat_function(fun = function(x) {exp(-1)}, color ="grey", linetype = "dotted", size = 0.5) +
   theme_minimal() + 
@@ -185,9 +185,40 @@ ggplot(filter(df_tmp,id %in% my_ids), aes(x = run_date_in_days/tau0, y = normali
   geom_text(data=legend, aes( x=x, y=y, label=label),
             color="black",
             size=3.5, angle=0) +
-#  ggtitle("collapse for beta > 3 ") 
- ggtitle("collapse for 2 < beta < 3")  
+  ggtitle("collapse for beta > 3 ") 
+# ggtitle("collapse for 2 < beta < 3")  
 
+
+###################################################
+# DATA COLLAPSE - all 
+
+lambda <- 1
+I_inf <- 0 
+beta <- 1
+
+my_ids <- (filter(df_tmp, tau0_err/tau0 <0.4) %>% distinct(id))$id
+
+ggplot(filter(df_tmp,id %in% my_ids), aes(x = (run_date_in_days/tau0)**beta, y = normalized_decay(run_time_percentage, I_inf), col = as.factor(id))) + 
+  geom_point(size = 0.5) + 
+  stat_function(fun = function(x) stretched_exp(x,lambda,beta,I_inf), color ="black", linetype = "solid", size = 0.5) +
+  stat_function(fun = function(x) {exp(-1)}, color ="grey", linetype = "dotted", size = 0.5) +
+  theme_minimal() + 
+  xlab(TeX("$(t/\\tau_0)^\\beta$")) + ylab('percentage of time first record') +
+  theme(aspect.ratio = 1,legend.position="none")  +   
+  ylim(c(0,1))  + xlim(c(0,5)) +   
+  geom_text(data=legend, aes( x=x, y=y, label=label),
+            color="black",
+            size=3.5, angle=0) #+    ggtitle("master curve") 
+
+# reference curve  
+ggplot(filter(df_tmp,id %in% my_ids), aes(x = run_date_in_days, y = run_time, col = as.factor(id))) + geom_line(aes(group = id), size = 0.3)  +
+  geom_point(size = 0.5) + 
+  theme_minimal() + xlab('days since first record') + ylab('Raw run time [s]') + 
+  scale_y_continuous(trans='log10') +
+  theme(aspect.ratio = 1, legend.position="none")
+
+
+###################################################
 # plot a single curve
 # my_id<- "29d30dlpnxd1rk8qgame-level" # beta =1.29
 # my_id <- "v1p4e418rklernr2game-level" # beta = 0.68
