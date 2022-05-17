@@ -1,3 +1,83 @@
+library(ggplot2)
+library(cowplot)
+library(latex2exp)
+require(dplyr)
+source("./code/analyse_data/helper.R")
+
+
+lambda <- 1
+I_inf <- 0.3
+b0 <- 0.5
+b1 <- 1
+b2 <- 2.5
+b3 <- 15
+#
+legend0 <- data.frame(
+  x = 3,
+  y = 0.7,
+  label = paste0("beta = ", b0)
+)
+#
+legend1 <- data.frame(
+  x = 3,
+  y = 0.8,
+  label = paste0("beta = ", b1)
+)
+#
+legend2 <- data.frame(
+  x = 3,
+  y = 0.9,
+  label = paste0("beta = ", b2)
+)
+
+# beta dependence 
+p1 <- ggplot() + 
+  stat_function(fun = function(x) stretched_exp(x,lambda,b0,I_inf), color ="blue", linetype = "solid", size = 0.5) +
+  stat_function(fun = function(x) stretched_exp(x,lambda,b1,I_inf), color ="black", linetype = "solid", size = 0.5) +
+  stat_function(fun = function(x) stretched_exp(x,lambda,b2,I_inf), color ="red", linetype = "solid", size = 0.5) +
+  stat_function(fun = function(x) {(1-I_inf)*exp(-1) + I_inf}, color ="grey", linetype = "dotted", size = 0.5) +
+  theme_minimal() + 
+  theme(aspect.ratio = 1,legend.position="none")  +   
+  ylim(c(0,1))  +   xlim(c(0,5))  + 
+  geom_text(data=legend0, aes( x=x, y=y, label=label),                  
+            color="blue", 
+            size=3.5, angle=0) +
+  geom_text(data=legend1, aes( x=x, y=y, label=label),                  
+            color="black", 
+            size=3.5, angle=0) +
+  geom_text(data=legend2, aes( x=x, y=y, label=label),                  
+            color="red", 
+            size=3.5, angle=0) +
+  ylab(TeX("$f(t)$")) + 
+  xlab(TeX("$t/\\tau_0$"))
+
+
+#
+legend3 <- data.frame(
+  x = 1.5,
+  y = 0.9,
+  label = paste0("beta = ", b3)
+)
+
+p2 <- ggplot() + 
+  stat_function(fun = function(x) stretched_exp(x,lambda,b3,I_inf), color ="purple", linetype = "solid", size = 0.5) +
+  stat_function(fun = function(x) {(1-I_inf)*exp(-1) + I_inf}, color ="grey", linetype = "dotted", size = 0.5) +
+  theme_minimal() + 
+  theme(aspect.ratio = 1,
+        legend.position="none")  +   
+  ylim(c(0,1))  +   xlim(c(0,2))  + 
+  geom_text(data=legend3, aes( x=x, y=y, label=label),                  
+            color="purple", 
+            size=3.5, angle=0) +
+  xlab(TeX("$t/\\tau_0$")) +   ylab(TeX("$f(t)$"))  
+
+
+# plot_grid(p1, p2)
+
+p1 
+p2 
+#### COLLAPSE ALL 
+
 setwd('~/videogame_innovations')
 fit_data <- read.csv('./data/processed/fit_data.csv', row.names = 1)
 df_res <- read.csv('./data/processed/fit_res.csv', row.names = 1)

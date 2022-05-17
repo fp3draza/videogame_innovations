@@ -1,5 +1,5 @@
 ---
-title: "Competitive optimisation in videogames speedrunning  "
+title: "Competitive optimisation in videogames speedrunning"
 output:
 html_document: default
 pdf_document: default
