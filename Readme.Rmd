@@ -189,19 +189,18 @@ The script to visualize plots and histogram resulting from the fitting procedure
 
 ## Data collapsing 
 
-A standard procedure to verify (visually) to which extent a law is obeyed by a set of the data is by replotting (after the fitting) the training datasets as a so-called *master curve*. Starting from Eq.(1) the m,aster curve $F[x]$ is obtained with the following transformation 
+A standard procedure to verify (visually) to which extent a law is obeyed by a set of data is by replotting the training datasets as a so-called *master curve*, using the *a posteriori* knowledge of the predictors. Starting from Eq.(1) the master curve $F[x]$ is obtained with the following transformation 
 \begin{equation}
-F\left[\left(\frac{t}{\tau_0}\right)^\beta\right] =\frac{f(t)-f_\infty}{1-f_\infty}{\rm e}^{-(t/\tau_0)^\beta}  
+F\left[\left(\frac{t}{\tau_0}\right)^\beta\right] =\frac{f(t)-f_\infty}{1-f_\infty} = {\rm e}^{-(t/\tau_0)^\beta}  
 \end{equation}
 If our data obeyed perfectly Eq.(1), they should collapse onto a single curve if plotted as $y_i \sim x_i$ with 
 \begin{equation}
 \begin{split}
-& x_i = \left(\frac{t}{\tau_0}\right)^\beta \\
+& x_i = \left(\frac{t_i}{\tau_0}\right)^\beta \\
 &y_i =\frac{f(t_i)-f_\infty}{1-f_\infty}{\rm e}^{-(t_i/\tau_0)^\beta}  
 \end{split}
 \end{equation}
-Note that the predictors ($\beta,\,\tau_0,\, f_\infty$) are different for each decay curve, labelled by the game id. 
-
+Note that the predictors ($\beta,\,\tau_0,\, f_\infty$) are different for each decay curve, labelled by the game id. Below we show the result of this transformation: 
 
 ```{r}
 setwd('~/videogame_innovations')
@@ -232,7 +231,7 @@ ggplot(filter(df_tmp,id %in% my_ids), aes(x = (run_date_in_days/tau0)**beta, y =
   ylim(c(0,1))  + xlim(c(0,5)) +   
   geom_text(data=legend, aes( x=x, y=y, label=label),
             color="black",
-            size=3.5, angle=0) #+    ggtitle("master curve") 
+            size=3.5, angle=0) 
 ```
 
 
