@@ -1,5 +1,5 @@
 ---
-title: "competitive optimisation in videogames speedrunning  "
+title: "Competitive optimisation in videogames speedrunning  "
 output:
 html_document: default
 pdf_document: default
@@ -12,6 +12,7 @@ knitr::opts_chunk$set(message=FALSE)
 library(ggplot2)
 library(cowplot)
 library(latex2exp)
+require(dplyr)
 source("./code/analyse_data/helper.R")
 ```
 
@@ -31,20 +32,22 @@ The time development speedrunning records is represented by a decaying function 
 
 In our analysis we aimed at    
 $\bullet$ recognizing common patterns in the time development of records for different games   
-$\bullet$ classifying quantitatively the decay with time of records obtained for different games by means of suitable parameters     
-$\bullet$ exploring whether available metadata of different games could explain the differences observed in the time dependence of various speedrunning record, e.g., in the longevity of a record.      
+$\bullet$ classifying quantitatively the time decay of records obtained for different games by means of suitable parameters     
+$\bullet$ exploring whether available metadata of different games could explain the differences observed in the time dependence of various speedrunning records, e.g., the longevity of records.      
+
+The code and data to reproduce our analysis are available on <a href="https://github.com/fp3draza/videogame_innovations"target="_blank">this GitHub repository</a>.  
 
 
+# Stretched-exponential decay  
 
-# Stretched expoinential decay  
-
-In order to normalize th decay of records obtained for different games we focused on the relative improvement in speedrun, namely the ratio between a current record at time $t$ and the first speedrun time uploaded on the server. After this normalization all decay curves would start from the value 1 on the first day of our time line. 
+In order to normalize the decay of records obtained for different games, we focused on the relative improvement in speedrun, namely the ratio between a current record at time $t$ and the first speedrun time uploaded on the server. After this normalization all decay curves would start from the value 1 on the first day of our time line. 
 
 A function which is widely used in science and technology to fit time decays is the stretched-exponential function 
 \begin{equation}
 f(t) = \left(1-f_\infty\right) {\rm e}^{-(t/\tau_0)^\beta} + f_\infty  
+\qquad (1)
 \end{equation}
-The parameters allows for a relatively large flexibility to fit different shape of decays and have the following meaning 
+The parameters allow for enough flexibility to fit different shapes of decays and have the following meanings 
 \begin{equation}
 \begin{split}
 \beta & \quad\text{sterteching exponent} \\
@@ -52,17 +55,14 @@ The parameters allows for a relatively large flexibility to fit different shape 
 f_\infty & \quad \text{final value of the decay} 
 \end{split}
 \end{equation}
-In our case, $f_\infty$ represents the intrinsic limitation to the relative improvement of a record.
+In our case, $f_\infty$ represents the intrinsic limitation to the relative improvement of a record for a specific game. 
 
-Our analysis suggests that the time decay of records can be classified as 
+Our analysis suggests that the time decays of records can be classified as 
 
-$\bullet$ those in which improvements occurs **incremetally**      
-$\bullet$ those in which improvements proceed through abrupt **innovation**. 
+$\bullet$ those in which improvements proceed **incrementally**      
+$\bullet$ those in which improvements occurs abruptly, through **innovation**. 
  
-The two types of behaviors are exemplified in the following plots: 
-
-
-
+The two types of behavior are exemplified in the following plots (left: incremental, right: innovation): 
 ```{r}
 library(cowplot)
 
@@ -71,7 +71,7 @@ I_inf <- 0.3
 b0 <- 0.5
 b1 <- 1
 b2 <- 2.5
-b3 <- 11
+b3 <- 15
 #
 legend0 <- data.frame(
   x = 3,
@@ -114,7 +114,6 @@ p1 <- ggplot() +
 
 
 #
-b3 <- 11
 legend3 <- data.frame(
   x = 1.5,
   y = 0.9,
@@ -140,7 +139,7 @@ plot_grid(p1, p2)
 
 ## Linear regression
 
-As suggested in the lectures, whenever possible it is recommended to transform the data in order that linear regression can be applied. This is possible if one assumes $f_\infty= 0$. In fact, with the transformation 
+As suggested in the lectures, whenever possible, it is recommended to transform the data in order that linear regression can be applied. This is possible if one assumes $f_\infty= 0$, in which case Eq.(1) can be linearized applying the transformation 
 
 \begin{equation}
 \begin{split}
@@ -153,14 +152,95 @@ y & = A + B\, x  \\
 where $x = \log(t)$, $B=\beta$, and $A=- \beta\log(\tau_0)$. 
 
 
-The functions used to linearize data and perform the fitting, by means of the `lm` function of the `stats` R-package, is given in the file  `code/analyse_data/functions_fit.R`.   
-This approach did not yield satisfactory results. Therefore, we included $f_\imfty$ as a fitting parameter and performed a non-linear regression of each decay. 
-For completeness, 
+We wrote function `linear_regression_fit()` to linearize data and perform the fitting, by means of the `lm` function of the `stats` R-package, that can be found in the file  `code/analyse_data/functions_fit.R`.   
+This approach did not yield satisfactory results. Therefore, we included $f_\infty$ as a fitting parameter and performed a non-linear regression of each decay. 
+ 
 
 
 ## Non-linear regression
 
-I this case we wrote a function based on the `nlsLM` routine of the `minpack.lm` R-package, whcih can be found in the file  `code/analyse_data/functions_fit.R`. 
+In this case we wrote the function `stretched_exp_fit()` based on the `nlsLM` routine of the `minpack.lm` R-package, which is also contained in the file `code/analyse_data/functions_fit.R`. To suppress the intrinsic correlation between the 
+$\beta$ and $\tau_0$ parameters in Eq.(1), we considered the equivalent equation  
+\begin{equation}
+f(t) = \left(1-f_\infty\right) {\rm e}^{-\lambda \, t^\beta} + f_\infty  
+\end{equation}
+
+Yet, we could not achieve satisfactory convergence by fitting the 3 parameters ($\beta,\,\lambda,\, f_\infty$) at once. We circumvented this problem implementing a function that varied only $\beta$ or the pair  ($\lambda,\, f_\infty$) in successive iterations. As a convergence criterion we used the value of R$^2$. 
+Besides this, our function `stretched_exp_fit()` also automate the definition of initial guesses for the parameters ($\beta,\,\lambda,\, f_\infty$) depending on the data points present in each decay curve.     
+
+
+
+## Post-fitting claening and plots
+
+Equation (1) was fitted to **411** datasets (decay curves) containing at least 9 points each. 
+To produce the plots of decay curves and histograms for $\beta$ and $\tau0$ we filtered out results for which 
+
+$\bullet$ $\tau_0$ was smaller than 5 times the last data point in time (typical curves for which this occurred resembled a staircase)  
+$\bullet$ $\delta \tau_0/\tau_0 > 0.4$    
+$\bullet$ $R^2_{\rm adj} < 0.65$    
+where $\delta \tau_0$ is the error in the determination of $\tau_0=\lambda^{-1/\beta}$ and 
+\begin{equation}
+R^2_{\rm adj} = R^2 - \left(1-R^2\right) \frac{n-k-1}{n-k-1}
+\end{equation}
+with the number of predictors $k=3$ in the present case. 
+
+The script to visualize plots and histogram resulting from the fitting procedure can be found in the file `code/visualise_data/produce_plots.R`. 
+
+
+## Data collapsing 
+
+A standard procedure to verify (visually) to which extent a law is obeyed by a set of the data is by replotting (after the fitting) the training datasets as a so-called *master curve*. Starting from Eq.(1) the m,aster curve $F[x]$ is obtained with the following transformation 
+\begin{equation}
+F\left[\left(\frac{t}{\tau_0}\right)^\beta\right] =\frac{f(t)-f_\infty}{1-f_\infty}{\rm e}^{-(t/\tau_0)^\beta}  
+\end{equation}
+If our data obeyed perfectly Eq.(1), they should collapse onto a single curve if plotted as $y_i \sim x_i$ with 
+\begin{equation}
+\begin{split}
+& x_i = \left(\frac{t}{\tau_0}\right)^\beta \\
+&y_i =\frac{f(t_i)-f_\infty}{1-f_\infty}{\rm e}^{-(t_i/\tau_0)^\beta}  
+\end{split}
+\end{equation}
+Note that the predictors ($\beta,\,\tau_0,\, f_\infty$) are different for each decay curve, labelled by the game id. 
+
+
+```{r}
+setwd('~/videogame_innovations')
+fit_data <- read.csv('./data/processed/fit_data.csv', row.names = 1)
+df_res <- read.csv('./data/processed/fit_res.csv', row.names = 1)
+df_res_filtered <- filter(df_res,(tau0_err/tau0 <0.4) & (R_sq_adj > 0.65))
+df_tmp <- fit_data %>% left_join(., df_res_filtered, by = c("id" = "id")) 
+#
+legend <- data.frame(
+  x = 4.5,
+  y = 0.38,
+  label = "1/e"
+)
+#
+lambda <- 1
+I_inf <- 0 
+beta <- 1
+#
+my_ids <- (filter(df_tmp, tau0_err/tau0 <0.4) %>% distinct(id))$id
+#
+ggplot(filter(df_tmp,id %in% my_ids), aes(x = (run_date_in_days/tau0)**beta, y = normalized_decay(run_time_percentage, I_inf), col = as.factor(id))) + 
+  geom_point(size = 0.5) + 
+  stat_function(fun = function(x) stretched_exp(x,lambda,beta,I_inf), color ="black", linetype = "solid", size = 0.5) +
+  stat_function(fun = function(x) {exp(-1)}, color ="grey", linetype = "dotted", size = 0.5) +
+  theme_minimal() + 
+  xlab(TeX("$(t/\\tau_0)^\\beta$")) + ylab('percentage of time first record') +
+  theme(aspect.ratio = 1,legend.position="none")  +   
+  ylim(c(0,1))  + xlim(c(0,5)) +   
+  geom_text(data=legend, aes( x=x, y=y, label=label),
+            color="black",
+            size=3.5, angle=0) #+    ggtitle("master curve") 
+```
+
+
+  
+  
+  
+
+
 
 
 

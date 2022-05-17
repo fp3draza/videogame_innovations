@@ -5,7 +5,9 @@ require(cowplot)
 require(igraph)
 library(latex2exp)
 library(scales)
+
 source("./code/analyse_data/helper.R")
+setwd('~/videogame_innovations')
 
 # load cleaned data / fitting results 
 data <- read.csv('./data/raw/speedrun_data_clean.csv', row.names = 1)
