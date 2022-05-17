@@ -4,6 +4,6 @@
 .RData
 .Ruserdata
 *log
-*png
+#*png
 *pdf
 *jpg
