@@ -80,3 +80,66 @@ stretched_exp_fit <- function(df, lambda = 0.1,
   rownames(df_res) <- NULL
   return(df_res)
 }
+
+
+
+
+linear_regression_fit <- function(fit_data) {
+  
+  df2 <- fit_data %>% select(id, run_date_in_days, run_time_percentage)
+  df1 <- df2 %>% mutate(log_improvement=log(run_time_percentage/100)) %>%
+    filter(log_improvement<0) %>%
+    mutate(log_log_improvement=log(-log_improvement),
+           log_time = log(run_date_in_days))
+  
+  
+  df_res <- NULL
+  
+  for (my_id in unique(fit_data$id)) {
+    
+    
+    # my_id <- "lde3r2l6ndx4nzo2game-level"
+    d <-df1 %>% filter(id == my_id) %>% select(id, log_time, log_log_improvement)
+    
+    fit <- lm(log_log_improvement ~ log_time, data = d) # fit the model
+    d$predicted <- predict(fit)   # Save the predicted values
+    d$residuals <- residuals(fit) # Save the residual values
+    
+    beta0 <- summary(fit)$coeff[1,"Estimate"]
+    beta0_err <- summary(fit)$coeff[1,"Std. Error"]
+    beta <- summary(fit)$coeff[2,"Estimate"]
+    beta_err <- summary(fit)$coeff[2,"Std. Error"]
+    
+    tau0 <- exp(-beta0/beta)
+    tau0_rel <- beta0_err/abs(beta)
+    tau0_rel <- tau0_rel + abs(beta0)*beta_err/(beta**2)
+    tau0_err <- tau0_rel*tau0
+    
+    p_val <- summary(fit)$coeff[2,4]
+    R_sq <- summary(fit)$r.squared
+    R_sq_adj <- summary(fit)$adj.r.squared
+    
+    
+    if (is.na(beta1)){
+      print(paste0("ACHTUNG we have a problem at id = ", my_id))
+      print(summary(fit))
+      break
+    }
+    
+    row <- data.frame(my_id, beta0, beta0_err, beta, beta_err, tau0, tau0_err, R_sq, R_sq_adj)
+    
+    print(row)
+    
+    df_res <- rbind(df_res, row)
+    
+  }
+  
+  colnames(df_res) <- c("id", "beta0", "beta0_err",  
+                        "beta", "beta_err", 
+                        "tau0","tau0_err",
+                        "R_sq", "R_sq_adj")
+  
+  
+  return(df_res)
+}
+

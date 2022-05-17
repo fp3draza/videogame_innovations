@@ -1,0 +1,172 @@
+---
+title: "competitive optimisation in videogames speedrunning  "
+output:
+html_document: default
+pdf_document: default
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(warning=FALSE)
+knitr::opts_chunk$set(message=FALSE)
+library(ggplot2)
+library(cowplot)
+library(latex2exp)
+source("./code/analyse_data/helper.R")
+```
+
+**Fernando Pedraza and Alessandro Vindigni** <br> 
+
+# Download data from API and clean it
+
+folders  <br> 
+`code/download_data_from_api/` <br> 
+`code/process_downloaded_data/`
+
+
+# Data analysis 
+
+
+The time development speedrunning records is represented by a decaying function of time, which is typically different for different videogames.   
+
+In our analysis we aimed at    
+$\bullet$ recognizing common patterns in the time development of records for different games   
+$\bullet$ classifying quantitatively the decay with time of records obtained for different games by means of suitable parameters     
+$\bullet$ exploring whether available metadata of different games could explain the differences observed in the time dependence of various speedrunning record, e.g., in the longevity of a record.      
+
+
+
+# Stretched expoinential decay  
+
+In order to normalize th decay of records obtained for different games we focused on the relative improvement in speedrun, namely the ratio between a current record at time $t$ and the first speedrun time uploaded on the server. After this normalization all decay curves would start from the value 1 on the first day of our time line. 
+
+A function which is widely used in science and technology to fit time decays is the stretched-exponential function 
+\begin{equation}
+f(t) = \left(1-f_\infty\right) {\rm e}^{-(t/\tau_0)^\beta} + f_\infty  
+\end{equation}
+The parameters allows for a relatively large flexibility to fit different shape of decays and have the following meaning 
+\begin{equation}
+\begin{split}
+\beta & \quad\text{sterteching exponent} \\
+\tau_0 & \quad \text{characteristic lifetime} \\  
+f_\infty & \quad \text{final value of the decay} 
+\end{split}
+\end{equation}
+In our case, $f_\infty$ represents the intrinsic limitation to the relative improvement of a record.
+
+Our analysis suggests that the time decay of records can be classified as 
+
+$\bullet$ those in which improvements occurs **incremetally**      
+$\bullet$ those in which improvements proceed through abrupt **innovation**. 
+ 
+The two types of behaviors are exemplified in the following plots: 
+
+
+
+```{r}
+library(cowplot)
+
+lambda <- 1
+I_inf <- 0.3
+b0 <- 0.5
+b1 <- 1
+b2 <- 2.5
+b3 <- 11
+#
+legend0 <- data.frame(
+  x = 3,
+  y = 0.7,
+  label = paste0("beta = ", b0)
+)
+#
+legend1 <- data.frame(
+  x = 3,
+  y = 0.8,
+  label = paste0("beta = ", b1)
+)
+#
+legend2 <- data.frame(
+  x = 3,
+  y = 0.9,
+  label = paste0("beta = ", b2)
+)
+
+# beta dependence 
+p1 <- ggplot() + 
+  stat_function(fun = function(x) stretched_exp(x,lambda,b0,I_inf), color ="blue", linetype = "solid", size = 0.5) +
+  stat_function(fun = function(x) stretched_exp(x,lambda,b1,I_inf), color ="black", linetype = "solid", size = 0.5) +
+  stat_function(fun = function(x) stretched_exp(x,lambda,b2,I_inf), color ="red", linetype = "solid", size = 0.5) +
+  stat_function(fun = function(x) {(1-I_inf)*exp(-1) + I_inf}, color ="grey", linetype = "dotted", size = 0.5) +
+  theme_minimal() + 
+  theme(aspect.ratio = 1,legend.position="none")  +   
+  ylim(c(0,1))  +   xlim(c(0,5))  + 
+  geom_text(data=legend0, aes( x=x, y=y, label=label),                  
+          color="blue", 
+          size=3.5, angle=0) +
+  geom_text(data=legend1, aes( x=x, y=y, label=label),                  
+          color="black", 
+          size=3.5, angle=0) +
+  geom_text(data=legend2, aes( x=x, y=y, label=label),                  
+          color="red", 
+          size=3.5, angle=0) +
+  ylab(TeX("$f(t)$")) + 
+  xlab(TeX("$t/\\tau_0$"))
+
+
+#
+b3 <- 11
+legend3 <- data.frame(
+  x = 1.5,
+  y = 0.9,
+  label = paste0("beta = ", b3)
+)
+
+p2 <- ggplot() + 
+  stat_function(fun = function(x) stretched_exp(x,lambda,b3,I_inf), color ="purple", linetype = "solid", size = 0.5) +
+  stat_function(fun = function(x) {(1-I_inf)*exp(-1) + I_inf}, color ="grey", linetype = "dotted", size = 0.5) +
+  theme_minimal() + 
+  theme(aspect.ratio = 1,
+        legend.position="none")  +   
+  ylim(c(0,1))  +   xlim(c(0,2))  + 
+  geom_text(data=legend3, aes( x=x, y=y, label=label),                  
+            color="purple", 
+            size=3.5, angle=0) +
+  xlab(TeX("$t/\\tau_0$")) +   ylab(TeX("$f(t)$"))  
+
+
+plot_grid(p1, p2)
+```
+
+
+## Linear regression
+
+As suggested in the lectures, whenever possible it is recommended to transform the data in order that linear regression can be applied. This is possible if one assumes $f_\infty= 0$. In fact, with the transformation 
+
+\begin{equation}
+\begin{split}
+f(t) & = {\rm e}^{-(t/\tau_0)^\beta} \\
+z & = \log\left[f(t)\right]= - \left(\frac{t}{\tau_0}\right)^\beta \\
+y & = \log\left(-z\right)= \beta \log(t) - \beta\log(\tau_0) \\ 
+y & = A + B\, x  \\ 
+\end{split}
+\end{equation}
+where $x = \log(t)$, $B=\beta$, and $A=- \beta\log(\tau_0)$. 
+
+
+The functions used to linearize data and perform the fitting, by means of the `lm` function of the `stats` R-package, is given in the file  `code/analyse_data/functions_fit.R`.   
+This approach did not yield satisfactory results. Therefore, we included $f_\imfty$ as a fitting parameter and performed a non-linear regression of each decay. 
+For completeness, 
+
+
+## Non-linear regression
+
+I this case we wrote a function based on the `nlsLM` routine of the `minpack.lm` R-package, whcih can be found in the file  `code/analyse_data/functions_fit.R`. 
+
+
+
+
+
+
+
+
+
