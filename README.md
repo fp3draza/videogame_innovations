@@ -20,12 +20,12 @@ In our analysis we aimed at
 
 ## Stretched-exponential decay  
 
-In order to normalize the decay of records obtained for different games, we focused on the relative improvement in speedrun, namely the ratio between a current record at time $t$ and the first speedrun time uploaded on the server. After this normalization all decay curves would start from the value 1 on the first day of our time line. 
+In order to normalize the decay of records obtained for different games, we focused on the relative improvement in speedrun, namely the ratio between a current record at time *t* and the first speedrun time uploaded on the server. After this normalization all decay curves would start from the value 1 on the first day of our time line. 
 
 
 A function which is widely used in science and technology to fit time decays is the stretched-exponential function   
 
-<img src="https://render.githubusercontent.com/render/math?math=(1)\,\,\,\, f(t)=\left(1-f_\infty\right){\rm e}^{-(t/\tau_0)^\beta}">
+<img src="https://render.githubusercontent.com/render/math?math=f(t)=\left(1-f_\infty\right){\rm e}^{-(t/\tau_0)^\beta}\,\,\,\,\,\,\,\,\,\,\,\, (1) ">
 
 The parameters allow for enough flexibility to fit different shapes of decays and have the following meanings 
 
@@ -62,9 +62,15 @@ In this case we wrote the function `stretched_exp_fit()` based on the `nlsLM` ro
 
 ### Data collapsing 
 
-A standard procedure to verify (visually) to which extent a law is obeyed by a set of data is by replotting the training datasets as a so-called *master curve*, using the *a posteriori* knowledge of the predictors. Starting from Eq.(1) the master curve $F[x]$ is obtained with the following transformation 
+A standard procedure to verify (visually) to which extent a law is obeyed by a set of data is by replotting the training datasets as a so-called *master curve*, using the *a posteriori* knowledge of the predictors. Starting from Eq.(1) the master curve <img src="https://render.githubusercontent.com/render/math?math=F[x]"> is obtained with the following transformation 
 
-...
+<img src="https://render.githubusercontent.com/render/math?math=F\left[\left(\frac{t}{\tau_0}\right)^\beta\right] =\frac{f(t)-f_\infty}{1-f_\infty} = {\rm e}^{-(t/\tau_0)^\beta}">  
+                   
+If our data obeyed perfectly Eq.(1), they should collapse onto a single curve if plotted as <img src="https://render.githubusercontent.com/render/math?math=y_i \sim x_i"> with   
+<img src="https://render.githubusercontent.com/render/math?math=x_i = \left(\frac{t_i}{\tau_0}\right)^\beta">   
+<img src="https://render.githubusercontent.com/render/math?math=y_i =\frac{f(t_i)-f_\infty}{1-f_\infty}{\rm e}^{-(t_i/\tau_0)^\beta}">    
 
-Below we show the result of this transformation:  
+Note that the predictors <img src="https://render.githubusercontent.com/render/math?math=(\beta,\,\tau_0,\, f_\infty)"> are different for each decay curve, labelled by the game id. 
+
+On the left panel of the underlying figure the original representation of the datesets used to produce the histograms is displayed, while on the right pannel the same data is shown after the transformation defined by the master curve <img src="https://render.githubusercontent.com/render/math?math=F[x]">:     
 ![Alt text](./figures_readme/collapse_all.png)
