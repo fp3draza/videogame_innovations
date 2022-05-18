@@ -2,9 +2,12 @@
 
 ## Download data from API and clean it
 
-folders  <br> 
-`code/download_data_from_api/` <br> 
-`code/process_downloaded_data/`
+In order to compile our dataset we made use of the [api](https://github.com/speedruncomorg/api) provided by [speedrun.com](https://www.speedrun.com/). We wrote a series of functions in R
+to query this data. These functions scrape speedrun.com to extract the world record progression of each record in the database. The scripts that contain the necessary functions to perform the scraping are found in `code/download_data_from_api/query_data_api.R`, this routine is run by running `code/download_data_from_api/run_query_data_api.R`.
+
+In addition to scraping the data describing the progression of world records, we also scraped metadata on the games, runs, and players. This scraping was performed by running the scripts `code/download_data_from_api/query_game_metadata.R`, `code/download_data_from_api/query_run_metadata.R`, and `code/download_data_from_api/query_player_metadata.R` respectively. 
+
+Having downloaded the raw data, we then post-processed it by removing all NAs, as well as performing some transformations. We did the all data wrangling using `code/process_downloaded_data/clean_api_data.R`. 
 
 
 ## Data analysis 
@@ -74,3 +77,23 @@ Note that the predictors <img src="https://render.githubusercontent.com/render/m
 
 On the left panel of the underlying figure the original representation of the datesets used to produce the histograms is displayed, while on the right pannel the same data is shown after the transformation defined by the master curve <img src="https://render.githubusercontent.com/render/math?math=F[x]">:     
 ![Alt text](./figures_readme/collapse_all.png)
+
+
+## Prediction of fit parameters
+
+
+We performed both supervised and unsupervised learning methods to predict the fitted parameters to the curve of a record from metainformation on the game itself. First, we performed a Principal Component Analysis using the following variables: 
+
+* year of release: year the game was released
+* number of runs: total number of attempts at setting a record
+* days in the database: number of days the game has been archived in the database
+* fraction of runs played on emulated systems
+* number of unique players
+* run production rate: total number of attempts at setting a record/ number of days the game has been archived in the database
+* number of records
+* record efficacy: number of records/total number of attempts at setting a record
+
+We next extracted the first two principal components and mapped each record onto them. Finally, we checked whether or not the records with similar beta/tau0 values were grouped together. We performed this principal component analysis using `code/analyse_data/principal_component_analysis.R`.
+
+We then performed the random forest analysis using the variables described above to predict the beta/tau0 parameters of each record. For each random forest fit, we computed its confusion matrix, accuracy and the importance of each variable. We performed this analysis using `code/analyse_data/random_forest_analysis.R`.
+
