@@ -40,9 +40,9 @@ Our analysis suggests that the time decays of records can be classified as
 * those in which improvements proceed **incrementally**      
 * those in which improvements occurs abruptly, through **disruptive innovation**. 
  
-The two types of behavior are exemplified in the following plots (left/top: incremental improvement, right/bottom: disruptive innovation):  
-![Alt text](./figures_readme/progressive_improvement.png)
-![Alt text](./figures_readme/disruptive_innovation.png)
+The two types of behavior are exemplified in the following plots (left: incremental improvement, right: disruptive innovation):  
+![Alt text](./figures_readme/beta_theo_2_regimes.png)
+
 
 
 ## Linear regression
