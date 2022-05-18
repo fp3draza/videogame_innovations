@@ -72,10 +72,8 @@ p2 <- ggplot() +
   xlab(TeX("$t/\\tau_0$")) +   ylab(TeX("$f(t)$"))  
 
 
-# plot_grid(p1, p2)
+plot_grid(p1, p2)
 
-p1 
-p2 
 #### COLLAPSE ALL 
 
 setwd('~/videogame_innovations')
@@ -96,7 +94,8 @@ beta <- 1
 #
 my_ids <- (filter(df_tmp, tau0_err/tau0 <0.4) %>% distinct(id))$id
 #
-ggplot(filter(df_tmp,id %in% my_ids), aes(x = (run_date_in_days/tau0)**beta, y = normalized_decay(run_time_percentage, I_inf), col = as.factor(id))) + 
+
+c <- ggplot(filter(df_tmp,id %in% my_ids), aes(x = (run_date_in_days/tau0)**beta, y = normalized_decay(run_time_percentage, I_inf), col = as.factor(id))) + 
   geom_point(size = 0.5) + 
   stat_function(fun = function(x) stretched_exp(x,lambda,beta,I_inf), color ="black", linetype = "solid", size = 0.5) +
   stat_function(fun = function(x) {exp(-1)}, color ="grey", linetype = "dotted", size = 0.5) +
@@ -108,3 +107,12 @@ ggplot(filter(df_tmp,id %in% my_ids), aes(x = (run_date_in_days/tau0)**beta, y =
             color="black",
             size=3.5, angle=0) 
 
+
+# reference curve  
+r <- ggplot(filter(df_tmp,id %in% my_ids), aes(x = run_date_in_days, y = run_time, col = as.factor(id))) + geom_line(aes(group = id), size = 0.3)  +
+  geom_point(size = 0.5) + 
+  theme_minimal() + xlab('days since first record') + ylab('Raw run time [s]') + 
+  scale_y_continuous(trans='log10') +
+  theme(aspect.ratio = 1, legend.position="none")
+
+plot_grid(r, c)
