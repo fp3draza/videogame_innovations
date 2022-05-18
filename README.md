@@ -27,8 +27,12 @@ In order to normalize the decay of records obtained for different games, we focu
 
 
 A function which is widely used in science and technology to fit time decays is the stretched-exponential function   
+<!--
+<img src="https://render.githubusercontent.com/render/math?math=f(t)=\left(1-f_\infty\right){\rm e}^{-(t/\tau_0)^\beta}+f_\infty\,\,\,\,\,\,\,\,\,\,\,\, (1)">
+-->
 
-<img src="https://render.githubusercontent.com/render/math?math=f(t)=\left(1-f_\infty\right){\rm e}^{-(t/\tau_0)^\beta}\,\,\,\,\,\,\,\,\,\,\,\, (1) ">
+![Alt text](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;f(t)=\left(1-f_\infty\right)e^{-(t/\tau_0)^\beta}+f_\infty\qquad(1))
+
 
 The parameters allow for enough flexibility to fit different shapes of decays and have the following meanings 
 
@@ -55,7 +59,8 @@ As suggested during the lectures, whenever possible, it is recommended to transf
 <img src="https://render.githubusercontent.com/render/math?math=f(t) = {\rm e}^{-(t/\tau_0)^\beta}">
 <img src="https://render.githubusercontent.com/render/math?math=z=\log\left[f(t)\right]= - \left(\frac{t}{\tau_0}\right)^\beta">
 <img src="https://render.githubusercontent.com/render/math?math=y=\log\left(-z\right)= \beta \log(t) - \beta\log(\tau_0)">   
-x = A  + B x
+
+![Figure](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;y=A+Bx)
 
 where <img src="https://render.githubusercontent.com/render/math?math=x=\log(t)">, <img src="https://render.githubusercontent.com/render/math?math=B=\beta">, and <img src="https://render.githubusercontent.com/render/math?math=A=- \beta\log(\tau_0)">. 
 
@@ -66,8 +71,11 @@ This approach did not yield satisfactory results. Therefore, we included <img sr
 ### Non-linear regression
 
 In this case we wrote the function `stretched_exp_fit()` based on the `nlsLM` routine of the `minpack.lm` R-package, which is also contained in the file `code/analyse_data/functions_fit.R`. To suppress the intrinsic correlation between the <img src="https://render.githubusercontent.com/render/math?math=\beta"> and <img src="https://render.githubusercontent.com/render/math?math=\tau_0"> parameters in Eq.(1), we considered the equivalent equation 
-
+<!--
 <img src="https://render.githubusercontent.com/render/math?math=f(t)=\left(1-f_\infty\right) {\rm e}^{-\lambda \, t^\beta} + f_\infty">
+-->
+
+![Alt text](https://latex.codecogs.com/png.image?\dpi{110}&space;\bg_white&space;f(t)=\left(1-f_\infty\right)e^{-\lambda(t)^\beta}+f_\infty)
 
 Yet, we could not achieve satisfactory convergence by fitting the 3 parameters <img src="https://render.githubusercontent.com/render/math?math=(\beta,\,\lambda,\, f_\infty)"> simultaneously. We circumvented this problem implementing a function that varied only <img src="https://render.githubusercontent.com/render/math?math=\beta"> or the pair  <img src="https://render.githubusercontent.com/render/math?math=(\lambda,\, f_\infty)"> in successive iterations. As a convergence criterion we used the value of <img src="https://render.githubusercontent.com/render/math?math=R^2">.  
 Besides this, our function `stretched_exp_fit()` also automate the definition of initial guesses for the parameters <img src="https://render.githubusercontent.com/render/math?math=(\beta,\,\lambda,\, f_\infty)"> depending on the data points present in each decay curve.     
