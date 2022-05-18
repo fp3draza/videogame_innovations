@@ -5,7 +5,9 @@ require(cowplot)
 require(igraph)
 library(latex2exp)
 library(scales)
+
 source("./code/analyse_data/helper.R")
+setwd('~/videogame_innovations')
 
 # load cleaned data / fitting results 
 data <- read.csv('./data/raw/speedrun_data_clean.csv', row.names = 1)
@@ -35,6 +37,8 @@ ggplot(filter(rows_per_id, n<30), aes(x=n)) +
 
 ###################################################
 # THEORETICAL DECAYS 
+library(cowplot)
+
 lambda <- 1
 I_inf <- 0.3
 b0 <- 0.5
@@ -60,7 +64,7 @@ legend2 <- data.frame(
 )
 
 # beta dependence 
-ggplot() + 
+  ggplot() + 
   stat_function(fun = function(x) stretched_exp(x,lambda,b0,I_inf), color ="blue", linetype = "solid", size = 0.5) +
   stat_function(fun = function(x) stretched_exp(x,lambda,b1,I_inf), color ="black", linetype = "solid", size = 0.5) +
   stat_function(fun = function(x) stretched_exp(x,lambda,b2,I_inf), color ="red", linetype = "solid", size = 0.5) +
@@ -79,6 +83,7 @@ ggplot() +
           size=3.5, angle=0) +
   ylab(TeX("$f(t)$")) + 
   xlab(TeX("$t/\\tau_0$"))
+
 
 
 # tau0 dependence 
