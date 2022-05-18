@@ -8,11 +8,11 @@ require(ROCR)
 
 # read data
 #fitting_parameters <- read.csv('data/processed/fit_res_2022-05-09.csv', row.names = 1)
-fitting_parameters <- read.csv('data/processed/fit_res_2022-05-11.csv', row.names = 1)
-og_data <- read.csv('data/processed/speedrun_data_clean.csv', row.names = 1)
-metadata_games <- read.csv('data/processed/game_metadata.csv', row.names = 1)
-metadata_runs <- read.csv('data/processed/run_metadata.csv', row.names = 1)
-metadata_players <- read.csv('data/processed/player_metadata.csv', row.names = 1)
+fitting_parameters <- read.csv('../../data/processed/fit_res.csv', row.names = 1)
+og_data <- read.csv('../../data/raw/speedrun_data_clean.csv', row.names = 1)
+metadata_games <- read.csv('../../data/processed/game_metadata.csv', row.names = 1)
+metadata_runs <- read.csv('../../data/processed/run_metadata.csv', row.names = 1)
+metadata_players <- read.csv('../../data/processed/player_metadata.csv', row.names = 1)
 
 # tidy data
 og_data <- og_data %>% group_by(id) %>% dplyr::mutate(number_of_records = n())

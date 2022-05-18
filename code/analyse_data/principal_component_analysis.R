@@ -10,7 +10,7 @@ fitting_parameters <- read.csv('../../data/processed/fit_res.csv', row.names = 1
 og_data <- read.csv('../../data/raw/speedrun_data_clean.csv', row.names = 1)
 metadata_games <- read.csv('../../data/processed/game_metadata.csv', row.names = 1)
 metadata_runs <- read.csv('../../data/processed/run_metadata.csv', row.names = 1)
-metadata_players <- read.csv('../../data/data/processed/player_metadata.csv', row.names = 1)
+metadata_players <- read.csv('../../data/processed/player_metadata.csv', row.names = 1)
 
 # tidy data
 og_data <- og_data %>% group_by(id) %>% dplyr::mutate(number_of_records = n())
@@ -63,10 +63,10 @@ pca_fit <- prcomp(pca_data[,c('year_released', 'number_of_runs','days_in_databas
                   center = TRUE, scale. = TRUE)
 
 # plot pca
-a <- ggbiplot(pca_fit, groups = as.factor(pca_data$beta_cat), ellipse = TRUE, var.axes=TRUE, alpha = 0.3, varname.abbrev = FALSE) + 
-  ggtitle('beta') + theme_minimal() + theme(aspect.ratio = 1, legend.title = element_blank()) + xlab('PC1\n(0.36% variance explained)') + ylab('PC2\n(0.27% variance explained)')
+a <- ggbiplot(pca_fit, groups = as.factor(pca_data$beta_cat), ellipse = TRUE, var.axes=FALSE, alpha = 0.3, varname.abbrev = FALSE) + 
+  ggtitle('beta') + theme_minimal() + theme(aspect.ratio = 1, legend.title = element_blank(), text = element_text(size = 20)) + xlab('PC1\n(0.36% variance explained)') + ylab('PC2\n(0.27% variance explained)')
 b <- ggbiplot(pca_fit, groups = as.factor(pca_data$tau0_cat), ellipse = TRUE, var.axes=FALSE, alpha = 0.3) + 
-  ggtitle('tau0') + theme_minimal() + theme(aspect.ratio = 1, legend.title = element_blank())  + xlab('PC1\n(0.36% variance explained)') + ylab('PC2\n(0.27% variance explained)')
+  ggtitle('tau0') + theme_minimal() + theme(aspect.ratio = 1, legend.title = element_blank(), text = element_text(size = 20))  + xlab('PC1\n(0.36% variance explained)') + ylab('PC2\n(0.27% variance explained)')
 c <- ggbiplot(pca_fit, groups = as.factor(pca_data$R_sq_cat), ellipse = TRUE, var.axes=FALSE, alpha = 0.3) + 
   ggtitle('Rsq') + theme_minimal() + theme(aspect.ratio = 1, legend.title = element_blank())  + xlab('PC1\n(0.36% variance explained)') + ylab('PC2\n(0.27% variance explained)')
 
