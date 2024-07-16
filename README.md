@@ -1,5 +1,5 @@
 # Competitive optimisation in videogames speedrunning
-
+t
 ## Download data from API and clean it
 
 In order to compile our dataset we made use of the [api](https://github.com/speedruncomorg/api) provided by [speedrun.com](https://www.speedrun.com/). We wrote a series of functions in R
